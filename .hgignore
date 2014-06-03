@@ -1,0 +1,14 @@
+syntax: re
+
+# Backup and lock files left by text editors
+.*~
+^\.\#*
+.*.swp
+.*.asv
+
+# Build tree
+^build/
+
+# Binaries
+#^bin/
+^lib/
