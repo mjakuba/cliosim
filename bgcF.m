@@ -65,14 +65,20 @@ end
 
 % Control.
 % @@@ reference to specific components is really ugly.  Consider redoing components struct
-% @@@ into struct with named fields.
+descentCntrl = prm.components(end-3);
+assert(strcmp('descentController',descentCntrl.name), ...
+   'Descent controller does not appear as 3rd from last component in components list!');
 cntrl = prm.components(end);
 assert(strcmp('controller',cntrl.name), ...
     'Controller does not appear as last component in components list!');
 dropweight = prm.components(end-2);
 assert(strcmp('drop weight',dropweight.name), ...
     'Did not find drop weight at expected position in components list!');
-if cntrl.active
+
+if ~descentCntrl.active
+  ZthrustDescent = descentCntrl.event_prm{2};
+  Zthrust = ZthrustDescent;
+elseif cntrl.active
   Kp = cntrl.event_prm{5};
   Kd = cntrl.event_prm{6};
   Ki = cntrl.event_prm{7};
@@ -83,7 +89,7 @@ if cntrl.active
   [nul,izg] = min(abs(cntrl.event_prm{1}-z)); 
   zg = cntrl.event_prm{1}(izg);
   Zthrust = bgcFeedback(t,zt,z,zg,Kp,Kd,Ki,Zff);
-elseif dropweight.active
+elseif dropweight.active % This has nothing to do with dropweight - it is the open loop thrust up between when the controller is engaged.
   bgcIntegrator(t,0,[],[]); % reset integrator
   Zmax = cntrl.event_prm{9};
   Zthrust = -Zmax;
