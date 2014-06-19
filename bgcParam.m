@@ -56,7 +56,7 @@ uhmw.bulkModulus = 77750*PSI2PA;
 uhmw.density = 58.01*LB2KG/FT2M^3; % [kg/m^3 @ 23 C]
 uhmw.thermalConductivity = NaN;
 syntacticAZ34.coeffThermalExpansion = 0; % @@@ unknown.
-syntacticAZ34.bulkModulus = NaN; % [Pa]
+syntacticAZ34.bulkModulus = 2.62e9; % [Pa]
 syntacticAZ34.density = 0.55e3; % [kg/m^3]
 syntacticAZ34.thermalConductivity = NaN;
 syntacticAZ34.specificHeat = NaN;
@@ -243,8 +243,8 @@ f.alpha = syntacticAZ34.coeffThermalExpansion;
 f.chi = 1/syntacticAZ34.bulkModulus;
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
-f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
-%0.20796387;
+f.V = 0.186; % [m^3]
+% bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
 f.m = f.rho*f.V;
 %114.380126; % [kg]
 prm.components = bgcAddComponent(f,prm.components);
