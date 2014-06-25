@@ -117,10 +117,10 @@ prm.profile = bgcProfile(prm.const);
 prm.theta = 300; % [K]
 prm.h = 10; % [kg]
 prm.CDs = 0; % [-]
-prm.CDf = 0.01; % [-]
-prm.CDd = 0.1; % [-]
-prm.CDu = 0.1; % [-]
-prm.As = 1.0; % [m^2]
+prm.CDf = 0.0; % [-]
+prm.CDd = 0.05229; % [-]
+prm.CDu = 0.05229; % [-]
+prm.As = 5.4665; % [m^2]
 prm.Af = 0.397259; % [m^2]
 prm.D = 0.7112; % [m]
 
@@ -243,11 +243,8 @@ f.alpha = syntacticAZ34.coeffThermalExpansion;
 f.chi = 1/syntacticAZ34.bulkModulus;
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
-f.V = 0.20796387; % [m^3]
+f.V = 0.22820681; % [m^3]
 % bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
-
-keyboard
-
 f.m = f.rho*f.V;
 %114.380126; % [kg]
 prm.components = bgcAddComponent(f,prm.components);

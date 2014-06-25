@@ -245,9 +245,6 @@ prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
 f.V = 0.20796387; % [m^3]
 % bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
-
-keyboard
-
 f.m = f.rho*f.V;
 %114.380126; % [kg]
 prm.components = bgcAddComponent(f,prm.components);

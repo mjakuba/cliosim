@@ -117,9 +117,10 @@ prm.profile = bgcProfile(prm.const);
 prm.theta = 300; % [K]
 prm.h = 10; % [kg]
 prm.CDs = 0; % [-]
-prm.CDf = 0.01; % [-]
-prm.CDd = 0.1; % [-]
-prm.CDu = 0.1; % [-]
+prm.CDf = 0.05; % [-]
+prm.CDd = 0.05; % [-]
+prm.CDu = 0.05; % [-]
+%Very generous interpretation of Myring data since no longtailed body
 prm.As = 1.0; % [m^2]
 prm.Af = 0.397259; % [m^2]
 prm.D = 0.7112; % [m]
