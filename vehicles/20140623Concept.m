@@ -14,92 +14,12 @@ sampleDepthRateTol = 0.1; % +/- [m/s]
 sampleTime = 2250; % [s]
 sampleTimeLockout = 50; % [s]
 
-% Conversions
-PSI2PA = 6894.75729;
-LB2KG = 0.453592;
-FT2M = 12*2.54/100;
-IN2M = 2.54/100;
-DEGF2K =  5/9;
+% Load material properties and conversion constants.
+bgcConversions;
+bgcMatl;
 
-% Constants
-prm.const.g = 9.81; % [m/s^2]
-prm.const.nu = 1.83e-6; % [m^2/s, 0 C]
-prm.const.mu = 1.88e-3; % [Pa s, 0 C]
-prm.const.atm = 101325; % [Pa] atmospheric pressure
-
-% Some useful material properties.  Note the thermal expansion coefficients below are
-% linear expansion coefficients.  We assume that the volumetric expansion coefficient
-% is given by three times these values.
-% Aluminum: Wikipedia
-% UHMW: Plastics International, TIVAR 1000.
-% mild steel: http://www.ezlok.com/TechnicalInfo/MPCarbonSteel.html
-% PFA: Dupont
-% Syntactic AZ-34: Esyntactic, 6230 m foam.  Compressive modulus provided, but not bulk modulus.
-% Syntactic AZ-38: Esyntactic, 7620 m foam.  Compressive modulus provided, but not bulk modulus.
-% Syntactic Eccofloat DS-33, TrelleBorg, 6100 m foam.
-water.coeffThermalExpansion = 69e-6; % [m/m/K]
-water.bulkModulus = 2.2e9; % [Pa] 
-water.density = 999; % [kg/m^3]
-water.thermalConductivity = 0.58; % [W/m/K]
-water.specificHeat = 4187; % [J/kg/K]
-rnalater.density = 1340; % [kg/m^3]
-aluminum.coeffThermalExpansion = 23.1e-6; % [m/m/K @ 25 C]
-aluminum.bulkModulus = 76e9; % [Pa]
-aluminum.density = 2.7e-3*100^3; % [kg/m^3 @ 20 C]
-aluminum.thermalConductivity = 237; % [W/m/K]
-mildSteel.coeffThermalExpansion = 11.5e-6; % [m/m/K @ 25 C]
-mildSteel.bulkModulus = 140e9; % [Pa]
-mildSteel.density = 7.870e-3*100^3; % [kg/m^3 @ 20 C]
-mildSteel.thermalConductivity = 51.9; % [W/m/K]
-uhmw.coeffThermalExpansion = 0.00011/DEGF2K; % [m/m/K @ 23 C]
-uhmw.bulkModulus = 77750*PSI2PA; 
-uhmw.density = 58.01*LB2KG/FT2M^3; % [kg/m^3 @ 23 C]
-uhmw.thermalConductivity = NaN;
-syntacticAZ34.coeffThermalExpansion = 0; % @@@ unknown.
-syntacticAZ34.bulkModulus = 2.62e9; % [Pa]
-syntacticAZ34.density = 0.55e3; % [kg/m^3]
-syntacticAZ34.thermalConductivity = NaN;
-syntacticAZ34.specificHeat = NaN;
-syntacticAZ38.coeffThermalExpansion = 0; % @@@ unknown.
-syntacticAZ38.bulkModulus = NaN; % [Pa]
-syntacticAZ38.density = 0.61e3; % [kg/m^3]
-syntacticAZ38.thermalConductivity = NaN;
-syntacticAZ38.specificHeat = NaN;
-syntacticEccofloatDS33.coeffThermalExpansion = 0; % @@@ unknown.
-syntacticEccofloatDS33.bulkModulus = 375000*PSI2PA; % [Pa]
-syntacticEccofloatDS33.density = 0.50e3; % [kg/m^3]
-syntacticEccofloatDS33.thermalConductivity = NaN;
-syntacticEccofloatDS33.specificHeat = NaN;
-pfa.coeffThermalExpansion = 13e-5; % [m/m/K]
-pfa.bulkModulus = 480e6/3/(1-2*0.46); % [Pa] Poisson's ratio for PTFE used.
-pfa.density = 2150; % [kg/m^3]
-pfa.thermalConductivity = 0.195; % [W/m/K]
-pfa.specificHeat = 1172; % [J/kg/K]
-polycarbonate.coeffThermalExpansion = 70e-6; % [m/m/K]
-polycarbonate.bulkModulus = 3.1e9; % [Pa]
-polycarbonate.density = 1200; % [kg/m^3]
-polycarbonate.thermalConductivity = 0.2; % [W/m/K]
-polycarbonate.specificHeat = 1200; % [J/kg/K]
-pvc.coeffThermalExpansion = 50.4e-6; % [m/m/K]
-pvc.bulkModulus = 2.41e9/3/(1-2*0.3825); % [Pa] 
-pvc.density = 1300; % [kg/m^3]
-pvc.thermalConductivity = 0.147; % [W/m/K]
-pvc.specificHeat = 1355; % [J/kg/K]
-ti2.coeffThermalExpansion = 8.6e-6; % [m/m/K]
-ti2.bulkModulus = 1.05e11/3/(1-2*0.33); % [Pa] 
-ti2.density = 4510; % [kg/m^3]
-ti2.thermalConductivity = 21.79; % [W/m/K]
-ti2.specificHeat = 500; % [J/kg/K]
-hdpe.coeffThermalExpansion = 200e-6; % [m/m/K]
-hdpe.bulkModulus = 1.07e09/3/(1-2*0.4101); % [Pa] 
-hdpe.density = 952; % [kg/m^3]
-hdpe.thermalConductivity = 0.461; % [W/m/K]
-hdpe.specificHeat = 1796; % [J/kg/K]
-mineraloil.coeffThermalExpansion = 1/3*6.4e-4; % [m/m/K]
-mineraloil.bulkModulus = 1.9e9; % [Pa] 
-mineraloil.density = 875; % [kg/m^3]
-mineraloil.thermalConductivity = 0.1; % [W/m/K]
-mineraloil.specificHeat = 0.45*water.specificHeat; % [J/kg/K]
+% Initialize parameter structure with constants, override as necessary.
+prm = bgcConst();
 
 % The background water column profile.
 prm.profile = bgcProfile(prm.const);
