@@ -18,6 +18,7 @@
 % follow the typical relationship for elastic behavior between the elastic modulus E, Poisson's 
 % ratio \mu, and bulk modulus K: K = E/(3*(1-2*\mu)). \mu < 1/3 should result in E>K, but the 
 % datasheet indicates \mu = 0.325 and E<K.
+% See also http://www.synfoam.com/  for more foam options.
 % water refers to fresh water, not seawater.  
 water.coeffThermalExpansion = 69e-6; % [m/m/K]
 water.bulkModulus = 2.15e9; % [Pa]  
