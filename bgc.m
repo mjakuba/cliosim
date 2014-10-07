@@ -3,6 +3,9 @@
 %
 % Revision History
 % 2012-12-27    mvj    Created.
+% 2014-10-07    mvj    Fixed output event list wrt wierd extra non-terminal events sometimes generated 
+%                      at start of new simulation segment
+
 
 % Set up paths
 addpath('./seawater');
@@ -74,10 +77,15 @@ while tout(end) < tend && ~stop
     c = ie(iie);    
     % Some kind of wierd bug.  Often an event that just happened will
     % happen on the start of the next cycle, but ode45 won't terminate
-    % on it but then reports it!  Ignore these.
+    % on it but then reports it!  Ignore these and make sure they don't
+    % show up in the output used for plotting.
     if t(end) - te(iie) > 1.0
       continue
-    end
+    else
+       teout = [teout; te(iie)];
+       yeout = [yeout; ye(iie,:)];
+       ieout = [ieout; ie(iie)];
+     end
     
     % Permanently update state of active components.
     if prm.components(c).active
@@ -100,11 +108,11 @@ while tout(end) < tend && ~stop
 
     % Display event.
     if prm.components(c).active
-      fprintf(1,'Event (t=%.1f, z=%.1f zt = %0.2f): %s Engaged.\n', ...
-	  te(iie),ye(iie,2),ye(iie,1),prm.components(c).name);
+      fprintf(1,'Event (t=%.1f, z=%.1f zt = %0.2f): %s Engaged (component %d).\n', ...
+	  te(iie),ye(iie,2),ye(iie,1),prm.components(c).name,ie(iie));
     else
-      fprintf(1,'Event (t=%.1f, z=%.1f zt = %0.2f): %s Disengaged.\n', ...
-	  te(iie),ye(iie,2),ye(iie,1),prm.components(c).name);
+      fprintf(1,'Event (t=%.1f, z=%.1f zt = %0.2f): %s Disengaged (component %d).\n', ...
+	  te(iie),ye(iie,2),ye(iie,1),prm.components(c).name,ie(iie));
     end
     
   end
@@ -112,9 +120,9 @@ while tout(end) < tend && ~stop
   % Store simulation output.
   tout = [tout; t];
   yout = [yout; y];
-  teout = [teout; te];
-  yeout = [yeout; ye];
-  ieout = [ieout; ie];
+  % teout = [teout; te];
+  % yeout = [yeout; ye];
+  % ieout = [ieout; ie];
   
   % Update initial time for next segment of sim.
   tstart = tout(end);

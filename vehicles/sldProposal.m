@@ -65,31 +65,12 @@ prm.D = 0.5; % [m]
 prm.components = bgcInitComponent('Null Component to initialize prm.components');  % @@@ bogus...
 bgcAddSldComponents;
 
-
-% Battery packs are internal, so no volume as far as simulation 
-% is concerned.  This is for Oceanserver long-format battery packs.
-% Each is 0.095 kWh.  6 packs are necessary for filtering (500 Wh).
-% Assume for now that 500 Wh for propulsion is reasonable.
-c = bgcInitComponent('Battery Pack');
-c.m = 12*1.425*LB2KG;
-prm.components = bgcAddComponent(c,prm.components);
-
-c = bgcInitComponent('Battery Housing 1');
-c.m = 10; 
-c.V = (31*IN2M)*pi*(3.5/2*IN2M)^2;
-c.rho = c.m/c.V;
-c.alpha = ti2.coeffThermalExpansion;
-c.chi = 1/ti2.bulkModulus;  % @@@ actual housing will be considerably less stiff than a solid rod of Ti.
-c.cp = NaN;
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 2';
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 3';
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 4';
-prm.components = bgcAddComponent(c,prm.components);
-
-% Add RNA Later bag.
+% Add RNA Later bag.  
+% 2014/10/07 17:23:41  Noticed this is not modeled correctly - RNALater is discharged
+%                      throughout filtering instead of just at the end.  Not particularly
+%                      relevant to current design, and leaving this here anyway because
+%                      this vehicle is supposed to show proposal results can be recreated
+%                      using solidworks in the loop.
 c = bgcInitComponent('RNAlater');
 c.rho = rnalater.density;
 c.V = 10/1000; % 10 l based on other SUPR configurations.
@@ -138,19 +119,19 @@ f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at dept
 f.m = f.rho*f.V;
 prm.components = bgcAddComponent(f,prm.components);
 
-% Thrust for in the case of no drop weight.
+% Was not a component of proposed vehicle - it was to use a drop weight, but current
+% version of code requires that a descent controller exists as a component immediately
+% above the drop weight.  For proposal vehicle, just make associated thrust 0.
 c = bgcInitComponent('descentController');
 c.eventf = @bgcEventThrustDown;
-% Overriding this now to get vehicle down.  Auto-flotation computation may make it neutral at 6000 m, but it
-% is wicked buoyant at the surface.  (This is a totally bogus vehicle so no issue yet.)
-%ZthrustDescent = 50; % [N] @@@ needs to be checked - this is in forward direction with non-zero advance velocity.
-ZthrustDescent = 500;
+ZthrustDescent = 0;
 c.event_prm =  {dropDepth,ZthrustDescent};
 prm.components = bgcAddComponent(c,prm.components);
 
 % Drop weight is not included in computation of flotation.
+% 2014/10/07 16:53:04  Altered back to proposal vehicle (m=20 instead of m=0).
 c = bgcInitComponent('drop weight');
-c.m = 0; % [kg]
+c.m = 20; % [kg]
 c.rho = mildSteel.density;
 c.V = c.m/c.rho;
 c.alpha = mildSteel.coeffThermalExpansion;

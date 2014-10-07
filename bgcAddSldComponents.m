@@ -1,7 +1,9 @@
 % 2014/10/03 18:18:39  Read these in from a the output of the sldwrks macro.
-% 2014/10/06 20:43:17  Screwed up archived copy of first run with bogus vehicle.  Need to restore from dbox.
+% 2014/10/06 20:43:17  Screwed up archived copy of first run with bogus vehicle.  Need to restore from dbox.  Eh.
+% who cares?
 %fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/CLIO-199-0000.SLDASM.txt';  % hard-coded for now
-fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposalVehicle.txt';
+%fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposalVehicle.txt';
+fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposal_vehicle20140710124610.sldtxt';
 %autoread('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/CLIO-199-0000.SLDASM.txt');
 % autoread won't work right now because of scientific notation and also doubles being interpreted as %d if the first
 % line happens to have spat out an integer.

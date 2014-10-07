@@ -64,8 +64,12 @@ set(gcf,'position',[1377         303         543         554]);
 subplot(311)
 plot(tout,yout(:,2));
 ie = ones(size(ieout));
-ie(ieout == 15) = NaN; % this is the controller engaging,disengaging
-ie(1) = NaN;
+% Controller is always last in component list, but actually we should add
+% a component that is the filtering operation - an event function already 
+% already exists bgcEventFilter - add a component that represents the
+% filtering operation.
+ie(ieout == length(prm.components)) = NaN; 
+ie(1:2) = NaN;
 zsupr = interp1(teout+0.1*rand(length(teout),1),ones(size(teout)).*ie,tout); % add jitter to accommodate interp1 uniqueness requirement.
 zsupr = zsupr.*yout(:,2);
 line(tout,zsupr,'color','r');
@@ -96,16 +100,11 @@ vstretch(0);
 
 
 % For proposal - smaller version.
-figure(4); clf reset;
+figure(5); clf reset;
 %set(gcf,'position',[985   303   935   554]);
 set(gcf,'position',[1325         447         543         317]);
 subplot(211)
 plot(tout,yout(:,2));
-ie = ones(size(ieout));
-ie(ieout == 15) = NaN; % this is the controller engaging,disengaging
-ie(1) = NaN;
-zsupr = interp1(teout+0.1*rand(length(teout),1),ones(size(teout)).*ie,tout); % add jitter to accommodate interp1 uniqueness requirement.
-zsupr = zsupr.*yout(:,2);
 line(tout,zsupr,'color','r');
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
@@ -113,7 +112,6 @@ legend('Ascent/Descent','Filtering',4)
 grid on;
 
 subplot(212)
-J2WH = 1/3600;
 plot(tout,pwr,tout,[NaN; J2WH*cumsum(pwr(2:end).*diff(tout))]);
 tticklabel('abs',3600*2);
 ylabel(sprintf('Propulsion Power (W)\nEnergy (Wh)'));
