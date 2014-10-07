@@ -1,10 +1,14 @@
+function components = bgcAddSldComponents(fmacro,components)
+% bgcAddSldComponents(fmacro)
+%
+% fmacro 
+%
 % 2014/10/03 18:18:39  Read these in from a the output of the sldwrks macro.
 % 2014/10/06 20:43:17  Screwed up archived copy of first run with bogus vehicle.  Need to restore from dbox.  Eh.
 % who cares?
-%fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/CLIO-199-0000.SLDASM.txt';  % hard-coded for now
-%fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposalVehicle.txt';
-fmacro = '/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposal_vehicle20140710124610.sldtxt';
-%autoread('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/CLIO-199-0000.SLDASM.txt');
+% 2014-10-07    mvj    Functionalized.  
+
+
 % autoread won't work right now because of scientific notation and also doubles being interpreted as %d if the first
 % line happens to have spat out an integer.
 [sld.componentName,sld.componentType,sld.mass,sld.volume,sld.matlName,sld.density,sld.elasticModulus,sld.poissonsRatio, ...
@@ -49,11 +53,6 @@ for n=1:length(sld.componentName)
    error('Unsupported component type.');
  end
    
-  
-   
-   
-   % Cheating here - functionalize this later.
-   prm.components = bgcAddComponent(c,prm.components);
-   
-  
+ components = bgcAddComponent(c,components);
+
 end

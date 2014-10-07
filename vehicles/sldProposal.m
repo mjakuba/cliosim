@@ -63,7 +63,7 @@ prm.D = 0.5; % [m]
 
 % hard-coded filename within for the moment.
 prm.components = bgcInitComponent('Null Component to initialize prm.components');  % @@@ bogus...
-bgcAddSldComponents;
+prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposal_vehicle20140710124610.sldtxt',prm.components);
 
 % Add RNA Later bag.  
 % 2014/10/07 17:23:41  Noticed this is not modeled correctly - RNALater is discharged
