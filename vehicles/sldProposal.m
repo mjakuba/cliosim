@@ -16,7 +16,8 @@ function [prm,components] = bgcParam
 %                      But everything in the file (.sldtxt) should be negatively buoyant so I don't understand
 %                      the error.  It's because the bulk modulus is NaN for all the components in the 
 %                      source sldtxt file, and that is because the day after this file was generated, the 
-%                      solidworks macro was changed to compute the bulk modulus internally.
+%                      solidworks macro was changed to compute the bulk modulus internally.  hg up to 
+%                      17:3443817c338e to be able to run a sim, albeit with the caveats noted above.
 
 
 
@@ -124,7 +125,6 @@ f.alpha = syntacticEccofloatDS33.coeffThermalExpansion;
 f.chi = 1/syntacticEccofloatDS33.bulkModulus;
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
-keyboard
 f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
 f.m = f.rho*f.V;
 prm.components = bgcAddComponent(f,prm.components);
