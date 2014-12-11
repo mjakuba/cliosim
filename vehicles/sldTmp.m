@@ -5,6 +5,7 @@ function [prm,components] = bgcParam
 % 2012-12-27    mvj    Created.
 % 2013-01-02    mvj    Added sampling parameters.  Needs revision to reflect real vehicle structure.
 % 2014-10-03    mvj    Using this to suck in material components and associated properties from Solidworks.
+% 2014-10-08    mvj    Hard-coded solidworks output file here instead of in bgcAddSldComponents.m
 
 
 % Mission parameters
@@ -59,36 +60,50 @@ prm.D = 0.5; % [m]
 
 % hard-coded filename within for the moment.
 prm.components = bgcInitComponent('Null Component to initialize prm.components');  % @@@ bogus...
-bgcAddSldComponents;
+% 2014/10/22 18:40:29  Proposal vehicle uses derived flotation, which has been commented out.
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/proposal_vehicle20140710124610.sldtxt',prm.components); % proposal vehicle
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/20142210145919.sldtxt',prm.components); % skinny fatboy (120 N negative)
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/20142710092830.sldtxt',prm.components); % fat fatboy (800 N positive)
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/20142210134222.sldtxt',prm.components); % 4 pod.
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20142210163259.sldtxt',prm.components); % one SUPR
+%prm.components = bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/20142210164450.sldtxt',prm.components); % one filter holder
+prm.components = ...
+    bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/H-beam_concept20141031154827.sldtxt', ...
+   prm.components); % H-beam concept without SUPRs, and too small mid-section.
+% prm.components = ...
+%     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20143110151700.sldtxt', ...
+%     prm.components); % 9-filter SUPR, some missing components and motor still internal.
+
+% % Battery packs are internal, so no volume as far as simulation 
+% % is concerned.  This is for Oceanserver long-format battery packs.
+% % Each is 0.095 kWh.  6 packs are necessary for filtering (500 Wh).
+% % Assume for now that 500 Wh for propulsion is reasonable.
+% c = bgcInitComponent('Battery Pack');
+% c.m = 12*1.425*LB2KG;
+% prm.components = bgcAddComponent(c,prm.components);
+
+% c = bgcInitComponent('Battery Housing 1');
+% c.m = 10; 
+% c.V = (31*IN2M)*pi*(3.5/2*IN2M)^2;
+% c.rho = c.m/c.V;
+% c.alpha = ti2.coeffThermalExpansion;
+% c.chi = 1/ti2.bulkModulus;  % @@@ actual housing will be considerably less stiff than a solid rod of Ti.
+% c.cp = NaN;
+% prm.components = bgcAddComponent(c,prm.components);
+% c.name = 'Battery Housing 2';
+% prm.components = bgcAddComponent(c,prm.components);
+% c.name = 'Battery Housing 3';
+% prm.components = bgcAddComponent(c,prm.components);
+% c.name = 'Battery Housing 4';
+% prm.components = bgcAddComponent(c,prm.components);
 
 
-% Battery packs are internal, so no volume as far as simulation 
-% is concerned.  This is for Oceanserver long-format battery packs.
-% Each is 0.095 kWh.  6 packs are necessary for filtering (500 Wh).
-% Assume for now that 500 Wh for propulsion is reasonable.
-c = bgcInitComponent('Battery Pack');
-c.m = 12*1.425*LB2KG;
-prm.components = bgcAddComponent(c,prm.components);
-
-c = bgcInitComponent('Battery Housing 1');
-c.m = 10; 
-c.V = (31*IN2M)*pi*(3.5/2*IN2M)^2;
-c.rho = c.m/c.V;
-c.alpha = ti2.coeffThermalExpansion;
-c.chi = 1/ti2.bulkModulus;  % @@@ actual housing will be considerably less stiff than a solid rod of Ti.
-c.cp = NaN;
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 2';
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 3';
-prm.components = bgcAddComponent(c,prm.components);
-c.name = 'Battery Housing 4';
-prm.components = bgcAddComponent(c,prm.components);
 
 % Add RNA Later bag.
 c = bgcInitComponent('RNAlater');
 c.rho = rnalater.density;
-c.V = 10/1000; % 10 l based on other SUPR configurations.
+%c.V = 10/1000; % 10 l based on other SUPR configurations.
+c.V = 0/1000; % 10 l based on other SUPR configurations.
 c.m = c.V*c.rho;
 c.alpha = water.coeffThermalExpansion; % @@@ no info
 c.chi = 1/water.bulkModulus; % @@@ no info
@@ -103,7 +118,8 @@ prm.components = bgcAddComponent(c,prm.components);
 % @@@ DI water discharge is important - it will make the vehicle less buoyant and so is dangerous.
 c = bgcInitComponent('Compensator');
 c.rho = water.density;
-c.V = 10/1000*(rnalater.density-1030)/(1030-c.rho); 
+%c.V = 10/1000*(rnalater.density-1030)/(1030-c.rho); 
+c.V = 0/1000*(rnalater.density-1030)/(1030-c.rho); 
 c.m = c.V*c.rho;
 c.alpha = water.coeffThermalExpansion;
 c.chi = 1/water.bulkModulus;
@@ -124,15 +140,35 @@ prm.components = bgcAddComponent(c,prm.components);
 % Handle flotation as a derived quantity to yield a
 % neutral float at desired depth.
 % @@@ Leave this in here for now - it may have some utility as a feedback mechanism to solidworks design.
-f = bgcInitComponent('flotation');
-f.rho = syntacticEccofloatDS33.density;
-f.alpha = syntacticEccofloatDS33.coeffThermalExpansion;
-f.chi = 1/syntacticEccofloatDS33.bulkModulus;
-prmc = prm;
-[prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
-f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
-f.m = f.rho*f.V;
-prm.components = bgcAddComponent(f,prm.components);
+% f = bgcInitComponent('flotation');
+% f.rho = syntacticEccofloatDS33.density;
+% f.alpha = syntacticEccofloatDS33.coeffThermalExpansion;
+% f.chi = 1/syntacticEccofloatDS33.bulkModulus;
+% prmc = prm;
+% [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
+% f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
+% f.m = f.rho*f.V;
+% prm.components = bgcAddComponent(f,prm.components);
+%
+% 2014-10-22  Feedback at the conceptual stage we really need is just how positive or negative the current design is
+%             Much easier to add margin ballast than margin flotation.  Note though that RNA later discharge and
+%             compensator are still in here as from proposal - that's 110 kg of mass, but with minimal effect on
+%             net buoyancy.
+[prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
+[rho,theta,p] = bgcInSitu(3000,prm.profile); % seawater at 3000 m - for concept studies, we'd like the float to be
+                                             % neutral at half depth.
+Vc = bgcVolume(prmc.V,prmc.alpha,prmc.chi,(theta-prm.theta),(p-prm.const.atm)); % Volume of the float at depth.
+Zc = prm.const.g*prmc.m - Vc*rho*prm.const.g; % (N) buoyancy (<0 indicates float is positive, >0 float is negative). 
+if Zc < 0
+  fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at 3000 m',-Zc/prm.const.g);
+else
+  warning(sprintf('Vehicle is negative at 3000 m.  %.1f N additional floatation required.',Zc));
+end
+
+keyboard
+
+% 2014/10/22 20:39:14 Don't need the rest of this for conceptual design for neutral.
+return
 
 % Thrust for in the case of no drop weight.
 c = bgcInitComponent('descentController');

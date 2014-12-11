@@ -7,6 +7,7 @@ function components = bgcAddSldComponents(fmacro,components)
 % 2014/10/06 20:43:17  Screwed up archived copy of first run with bogus vehicle.  Need to restore from dbox.  Eh.
 % who cares?
 % 2014-10-07    mvj    Functionalized.  
+% 2014-10-08    mvj    Computation or extraction of custom bulk modulus now dealt with in solidworks macro.
 
 
 % autoread won't work right now because of scientific notation and also doubles being interpreted as %d if the first
@@ -25,30 +26,46 @@ for n=1:length(sld.componentName)
 
     % I think I have this fixed, but in some cases seems like bodies (as opposed to parts) had custom material properties
     % assigned and this catches those.
-    assert(abs(sld.mass(n)/sld.volume(n) - sld.density(n)) < eps(1e5)); 
+    % 2014-10-08    mvj    Seems like there are precision problems on some parts.  I do think the part is being
+    %                      updated temporarily if necessary.  This showed up on a part that did not require updating.
+    %                      Changed assert to a warning.
+    %assert(abs(sld.mass(n)/sld.volume(n) - sld.density(n)) < eps(1e5)); 
+    if abs(sld.mass(n)/sld.volume(n) - sld.density(n)) > eps(1e5)
+      warning(sprintf('%s: mass/volume differs from material density by %.16f kg/m^3', ...
+	  sld.componentName{n}, ...
+	  sld.mass(n)/sld.volume(n) - sld.density(n)))
+    end
+    
 
     c.m = sld.mass(n);
     c.V = sld.volume(n);
     c.rho = sld.density(n);
     c.alpha = sld.coeffThermalExpansion(n);
    
-    % Deal with bulk modulus.
-    if ~isnan(sld.bulkModulus(n))
-      warning('Using custom bulk modulus for solid component.');
-      c.chi = 1/c.bulkModulus(n);  % @@@ not sure this is a good idea - at least warn that we are using a hard-coded
-      % custom property for some component as delivered.
+    % Bulk modulus.  Since there are various schemes in play for using effective/approximate bulk moduli
+    % at least check that bulk modulus is not 0.  That definitely indicates a missing material or effective property
+    % and the simulation will fail.  Alternately could set compressibility to 0 in this case and issue a warning.
+    if (sld.bulkModulus(n) == 0)
+      %error(sprintf('Bulk Modulus for solid component %s is zero.',c.name{:}));
+      warning(sprintf('Bulk Modulus for solid component %s is zero!  Setting compressibility to zero.',c.name{:}));
+      c.chi = 0.0;
     else
-      bulkModulus = sld.elasticModulus(n)/(3*(1-2*sld.poissonsRatio(n)));
-      c.chi = 1/bulkModulus;
+      c.chi = 1/sld.bulkModulus(n);
     end
   
-     c.cp = sld.specificHeat(n);
+    c.cp = sld.specificHeat(n);
     
   elseif strcmp(sld.componentType(n),'internal')
     
     c.m = sld.mass(n);
     % All other values ignored and left at defaults.
-   
+
+  elseif strcmp(sld.componentType(n),'OEM')  % external OEM part/assy.
+    
+    c.m = sld.mass(n);
+    c.V = sld.volume(n);
+    % All other values ignored and left at defaults.
+    
   else
    error('Unsupported component type.');
  end
