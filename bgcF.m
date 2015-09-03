@@ -57,7 +57,7 @@ else % upcast
 end
 if Re <= 1
   Zdrag = ZdragStokes;
-elseif Re > 1e3 % @@@ bogus model for transitional Re.
+elseif Re < 1e3 % @@@ bogus model for transitional Re.
   Zdrag = ZdragStokes + ZdragTurb;
 else
   Zdrag = ZdragTurb;

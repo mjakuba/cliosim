@@ -15,6 +15,8 @@ function Vfo = bgcNeutral(z,profile,prmc,prmf)
 % Revision History
 % 2012-12-27    mvj    Created.
 % 2014-10-08    mvj    Clarified usage.
+% 2015-09-03    mvj    Altered to allow adding margin ballast if material is 
+%                      negatively buoyant.
 
 
 % Compute in situ properties.
@@ -23,16 +25,21 @@ function Vfo = bgcNeutral(z,profile,prmc,prmf)
 % Compute displacement of the components at in situ temperature and pressure
 Vc = bgcVolume(prmc.V,prmc.alpha,prmc.chi,(theta-prmc.theta),(p-prmc.const.atm));
 
-% Compute the required buoyancy.
-Zc = prmc.const.g*prmc.m - Vc*rho*prmc.const.g;
-assert(Zc > 0,'Float is buoyant without any flotation!');
-  
 % Compute the density of the floatation at in situ temperature and pressure
 % Nominal temperature and pressure are assumed to be the same as for other components.
 vf = bgcVolume(1,prmf.alpha,prmf.chi,(theta-prmc.theta),(p-prmc.const.atm));
 rhof = prmf.rho/vf;
 
-% Compute the volume of flotation required at pressure.
+% Compute the required buoyancy.
+Zc = prmc.const.g*prmc.m - Vc*rho*prmc.const.g;
+
+if Zc < 0  % (N) buoyancy (<0 indicates float is positive, >0 float is negative).
+  assert(rhof > rho,'Float is buoyant without any flotation!');  % negative ballast needed.
+else
+  assert(rhof < rho,'Float is negative without any ballast!');  % positive flotation needed.
+end
+  
+% Compute the volume of flotation/ballast required at pressure.
 Vf = -Zc/prmc.const.g/(rhof - rho);
 
 % Compute required volume at surface.
