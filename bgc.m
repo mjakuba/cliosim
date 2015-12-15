@@ -26,7 +26,8 @@ tend = 50000; % [s]
 % @@@ Event functions sometimes problematic for large maxstep.  Not sure how to improve that behavior without
 % @@@ two event functions devoted to each depth interval of interest so that zero crossings are guaranteed.
 odeOptions = odeset('MaxStep',2, ...
-    'Events',@(t,y) bgcEvents(t,y,prm));
+    'Events',@(t,y) bgcEvents(t,y,prm), ...
+    'Stats','on');
 
 % Solve.  Every event is terminal, solver is used repeatedly and output aggregated.
 tout = tstart;

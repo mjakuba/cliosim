@@ -66,29 +66,19 @@ prm.CDu = 0.3; % [-]  As for CDd.
 % hard-coded filename within for the moment.
 prm.components = bgcInitComponent('Null Component to initialize prm.components');  % @@@ bogus...
 
-% Add four 9-filter SUPRs, some missing components and motor still internal.
+% H-beam concept more or less as at Mechanical Design Review, 2015-12-16.
+% 2015/12/15 21:21:07  @@@ what other components are missing - chassies in particular?  Also need to 
+% mirror SUPRs and various mounts.
 prm.components = ...
-     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20143110151700.sldtxt', ...
-     prm.components); 
-prm.components = ...
-     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20143110151700.sldtxt', ...
-     prm.components); % 9-filter SUPR, some missing components and motor still internal.
-prm.components = ...
-     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20143110151700.sldtxt', ...
-     prm.components); % 9-filter SUPR, some missing components and motor still internal.
-prm.components = ...
-     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/placeholder_supr_assy20143110151700.sldtxt', ...
-     prm.components); % 9-filter SUPR, some missing components and motor still internal.
- 
-% H-beam concept more or less as at AGU 2014 but without SUPRs (SUPRs added above).
-prm.components = ...
-    bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/H-beam_concept20150901165920.sldtxt', ...
+    bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/H-beam_concept20151215161336.sldtxt', ...
     prm.components); 
+
 
 % 2015/09/02 17:53:53  Battery packs not in solid model.  Adding them here for now.  
 c = bgcInitComponent('Battery Pack');
 c.m = 24*2*1.425*LB2KG;  % Current concept will be able to fit up to 32*2 packs.
 prm.components = bgcAddComponent(c,prm.components);
+
 
 % Add status print.
 c = bgcInitComponent('Status Printer');
@@ -188,7 +178,7 @@ c.eventf = @bgcEventThrustDown;
 % generally better idea than ballasting for margin at 6000 m from an energy perspective since we're not likely to
 % get anywhere close to isopycnal.  (Emergency Drop weight will have to be sized to compensate).
 %ZthrustDescent = 50; % [N] @@@ needs to be checked - this is in forward direction with non-zero advance velocity.
-ZthrustDescent = 5000;
+ZthrustDescent = 50;
 c.event_prm =  {dropDepth,ZthrustDescent};
 prm.components = bgcAddComponent(c,prm.components);
 
@@ -217,8 +207,8 @@ c = bgcInitComponent('controller');
 c.eventf = @bgcEventControl;
 Kp = 10; Kd = 50; Ki = 0.01; 
 Zff = 0; % [N]
-%Zmax = 50; % [N] might be generous.
-Zmax = 500; % definitely generous - just to get sim to run.
+Zmax = 50; % [N] might be generous.
+%Zmax = 500; % definitely generous - just to get sim to run.
 c.event_prm = {sampleDepths,sampleDepthTol,sampleTime+50,sampleTimeLockout,Kp,Kd,Ki,Zff,Zmax};
 prm.components = bgcAddComponent(c,prm.components);
 

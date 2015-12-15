@@ -65,6 +65,13 @@ for n=1:length(sld.componentName)
     c.m = sld.mass(n);
     c.V = sld.volume(n);
     % All other values ignored and left at defaults.
+
+  elseif strcmp(sld.componentType(n),'housing')  % Compressibility 
+    
+    c.m = sld.mass(n);
+    c.V = sld.volume(n);
+    c.chi = 1/sld.bulkModulus(n);
+    % All other values ignored and left at defaults.
     
   else
    error('Unsupported component type.');
