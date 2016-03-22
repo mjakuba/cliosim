@@ -30,7 +30,7 @@ for n=1:length(sld.componentName)
     %                      updated temporarily if necessary.  This showed up on a part that did not require updating.
     %                      Changed assert to a warning.
     %assert(abs(sld.mass(n)/sld.volume(n) - sld.density(n)) < eps(1e5)); 
-    if abs(sld.mass(n)/sld.volume(n) - sld.density(n)) > eps(1e5)
+    if abs(sld.mass(n)/sld.volume(n) - sld.density(n)) > 0.1
       warning(sprintf('%s: mass/volume differs from material density by %.16f kg/m^3', ...
 	  sld.componentName{n}, ...
 	  sld.mass(n)/sld.volume(n) - sld.density(n)))
