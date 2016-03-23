@@ -134,22 +134,23 @@ prm.components = bgcAddComponent(c,prm.components);
 %             Much easier to add margin ballast than margin flotation.  Note though that RNA later discharge and
 %             compensator are still in here as from proposal - that's 110 kg of mass, but with minimal effect on
 %             net buoyancy.
+BALLAST_DEPTH = 100;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
-[rho,theta,p] = bgcInSitu(3000,prm.profile); % seawater at 3000 m - for concept studies, we'd like the float to be
+[rho,theta,p] = bgcInSitu(BALLAST_DEPTH,prm.profile); % seawater at 3000 m - for concept studies, we'd like the float to be
                                              % neutral at half depth.
 Vc = bgcVolume(prmc.V,prmc.alpha,prmc.chi,(theta-prm.theta),(p-prm.const.atm)); % Volume of the float at depth.
 Zc = prm.const.g*prmc.m - Vc*rho*prm.const.g; % (N) buoyancy (<0 indicates float is positive, >0 float is negative). 
 if Zc < 0
-  fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at 3000 m\n',-Zc/prm.const.g);
+  fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at %.1f m\n',-Zc/prm.const.g,BALLAST_DEPTH);
 else
-  fprintf(1,'Vehicle is negative at 3000 m.  %.1f N additional floatation required.\n',Zc);
+  fprintf(1,'Vehicle is negative at %.1f m.  %.1f N additional floatation required.\n',BALLAST_DEPTH,Zc);
 end
 
 % 2015/09/03 21:41:41 Added this note so I dont wonder later why this doesn't work!
 warning('this has insufficient thrust to overcome buoyancy at depth and negative at surface.  Sim takes forever.');
 
 % 2014/10/22 20:39:14 Don't need the rest of this for conceptual design for neutral.
-disp('Paused.  Hit any key to add/rm floatation for neutral at 3000 m and continue.');
+fprintf(1,'Paused.  Hit any key to add/rm floatation for neutral at %.1f m and continue.\n',BALLAST_DEPTH);
 pause;
 %return
 
@@ -157,19 +158,20 @@ pause;
 SYNTACTIC = syntacticTrelleborgEL34;
 if Zc < 0
   f = bgcInitComponent('ballast (negatively buoyant)');
-  f.rho = lead.density;
-  f.alpha = lead.coeffThermalExpansion;
-  f.chi = 1/lead.bulkModulus;
+  f.rho = aluminum.density;
+  f.alpha = aluminum.coeffThermalExpansion;
+  f.chi = 1/aluminum.bulkModulus;
+  margin = 0.995;
 else
   f = bgcInitComponent('ballast (positively buoyant)');
   f.rho = SYNTACTIC.density;
   f.alpha = SYNTACTIC.coeffThermalExpansion;
   f.chi = 1/SYNTACTIC.bulkModulus;
+  margin = 1.005;
 end
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);
-%f.V = bgcNeutral(3000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at depth.
-f.V = bgcNeutral(3000.0,prm.profile,prmc,f);  % neutral at mid water-column.
+f.V = bgcNeutral(BALLAST_DEPTH,prm.profile,prmc,f)*margin;
 f.m = f.rho*f.V;
 prm.components = bgcAddComponent(f,prm.components);
 
@@ -180,19 +182,20 @@ prm.components = bgcAddComponent(f,prm.components);
 %                           seawater bulk modulus for.  Note that this will yield a positively buoyanct
 %                           vehicle because we're recomputing flotation for the slight positive buoyancy of
 %                           silicone oil.
+% 2016/03/23 20:36:00  MVJ  Silicone oil is highly responsive to temperature.  A postive vehicle at the surface
+%                           may be very negative at 20 m.   Have to use a fairly shallow ballast depth.
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
 o = bgcInitComponent('silicone oil compressee');
 o.rho = siliconeoil.density;
 o.alpha = siliconeoil.coeffThermalExpansion;
 o.chi = 1/siliconeoil.bulkModulus;
-o.V = prmc.V*(seawater.bulkModulus - 1/prmc.chi)/(1/o.chi - seawater.bulkModulus);
+o.V = prmc.V*(1/seawater.bulkModulus - prmc.chi)/(1/siliconeoil.bulkModulus - 1/seawater.bulkModulus);
 o.m = o.V*siliconeoil.density;
 fprintf(1,'Silicone oil added to make vehicle isopycnal: %.1f cc, %.1f kg.  Hit any key to continue.\n', ...
     o.V*100^3,o.m);
 pause
 prm.components = bgcAddComponent(o,prm.components);
 
-% @@@ really oil and ballast needs to be an iterative loop.
 
 % Thrust for in the case of no drop weight.
 c = bgcInitComponent('descentController');
