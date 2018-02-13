@@ -9,16 +9,21 @@ Then either create a soft link (Linux) or create a copy of the
 of the vehicle/simulation parameters file you would like to run.
 For example, to run the feasibility study vehicle:
 
-...
-!ln -s ./vehicle/20130200_proposal.m bgcParam.m  # Linux
-copyfile('./vehicle/20130200_proposal.m','./bgcParam.m')  # Windows
-...
+Linux:
+```
+>> !ln -s ./vehicle/20130200_proposal.m bgcParam.m  # Linux
+```
+
+Windows:
+```
+>> copyfile('./vehicle/20130200_proposal.m','./bgcParam.m')  # Windows
+```
 
 Now run the simulation
 
-...
-bgc
-...
+```
+>> bgc
+```
 
 This will run a simulation of a Clio dive.  The vehicle 
 itself and all simulation parameters are defined in 
