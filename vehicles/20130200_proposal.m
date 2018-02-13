@@ -247,6 +247,13 @@ f.V = bgcNeutral(6000.0,prm.profile,prmc,f)*1.02;  % 2% reserve buoyancy at dept
 f.m = f.rho*f.V;
 prm.components = bgcAddComponent(f,prm.components);
 
+% Active descent.  (Added 2018 for code-compatibility.)
+c = bgcInitComponent('descentController');
+c.eventf = @bgcEventThrustDown;
+ZthrustDescent = 0;  % N  Neutered.  (Unused in proposal)
+c.event_prm =  {dropDepth,ZthrustDescent};
+prm.components = bgcAddComponent(c,prm.components);
+
 % Drop weight is not included in computation of flotation.
 c = bgcInitComponent('drop weight');
 c.m = 20; % [kg]
