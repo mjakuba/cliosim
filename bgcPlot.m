@@ -75,7 +75,7 @@ zsupr = zsupr.*yout(:,2);
 line(tout,zsupr,'color','r');
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
-legend('Ascent/Descent','Filtering',4)
+legend('Ascent/Descent','Filtering','location','NW')
 grid on;
 
 subplot(312)
@@ -90,7 +90,7 @@ J2WH = 1/3600;
 plot(tout,pwr,tout,[NaN; J2WH*cumsum(pwr(2:end).*diff(tout))]);
 tticklabel('abs',3600*2);
 ylabel(sprintf('Propulsion Power (W)\nEnergy (Wh)'));
-legend('Power','Energy',2);
+legend('Power','Energy');
 grid on;
 xlabel('Time (hh:mm:ss)');
 
@@ -108,14 +108,14 @@ plot(tout,yout(:,2));
 line(tout,zsupr,'color','r');
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
-legend('Ascent/Descent','Filtering',4)
+legend('Ascent/Descent','Filtering')
 grid on;
 
 subplot(212)
 plot(tout,pwr,tout,[NaN; J2WH*cumsum(pwr(2:end).*diff(tout))]);
 tticklabel('abs',3600*2);
 ylabel(sprintf('Propulsion Power (W)\nEnergy (Wh)'));
-legend('Power','Energy',2);
+legend('Power','Energy');
 grid on;
 xlabel('Time (hh:mm:ss)');
 

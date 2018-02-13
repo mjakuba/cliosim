@@ -67,8 +67,18 @@ prm.CDu = 0.3; % [-]  As for CDd.
 prm.components = bgcInitComponent('Null Component to initialize prm.components');  % @@@ bogus...
 
 % H-beam concept more or less as at Mechanical Design Review, 2015-12-16.
-% 2015/12/15 21:21:07  @@@ what other components are missing - chassies in particular?  Also need to 
-% mirror SUPRs and various mounts.
+% 2015/12/15 21:21:07  @@@ what other components are missing - chassies in particular?  
+% % 2015-12-18    mvj    Manually multiplied SUPR proxies in file.  Did not mirror mounts or add chassies.
+% 2015/12/18 22:21:50  missing alphas for several large components but this seems to have little impact.
+% 2015/12/18 22:22:19  Replaced HDPE bulk modulus from solidworks with UHMW bulk modulus from bgcMatl.m - suddenly
+% vehicle is more compressible than seawater (this is actually more problematic than being less compressible).
+% Change is 1983685576.56656 -> 536067379.2975000 (about a factor of 4 more compressible).
+% Other data gives compressive modulus as:
+% LDPE: 54000 psi (3.72e8)
+% HDPE: 100000 psi (6.89e8)
+% UHMW: 80000 psi (5.52e8)
+% But this is not bulk modulus (it is more akin to Young's modulus except in compression).
+
 prm.components = ...
     bgcAddSldComponents('/home/jakuba/Dropbox/Clio/vehicle/sld/tmp/H-beam_concept20151215161336.sldtxt', ...
     prm.components); 
@@ -76,7 +86,7 @@ prm.components = ...
 
 % 2015/09/02 17:53:53  Battery packs not in solid model.  Adding them here for now.  
 c = bgcInitComponent('Battery Pack');
-c.m = 24*2*1.425*LB2KG;  % Current concept will be able to fit up to 32*2 packs.
+c.m = 32*2*1.425*LB2KG;  % Current concept will be able to fit up to 32*2 packs.
 prm.components = bgcAddComponent(c,prm.components);
 
 
