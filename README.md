@@ -11,12 +11,12 @@ For example, to run the feasibility study vehicle:
 
 Linux:
 ```
->> !ln -s ./vehicle/20130200_proposal.m bgcParam.m  # Linux
+>> !ln -s ./vehicle/20130200_proposal.m bgcParam.m 
 ```
 
 Windows:
 ```
->> copyfile('./vehicle/20130200_proposal.m','./bgcParam.m')  # Windows
+>> copyfile('./vehicle/20130200_proposal.m','./bgcParam.m') 
 ```
 
 Now run the simulation
@@ -25,11 +25,6 @@ Now run the simulation
 >> bgc
 ```
 
-This will run a simulation of a Clio dive.  The vehicle 
-itself and all simulation parameters are defined in 
-bgcParam.m
+This will run a simulation of a Clio dive.  The vehicle itself and all simulation parameters are defined in bgcParam.m
 
-The only output as of 2015-05-28 is a series of plots.  
-No log is produced, but all variables are dumped to 
-the workspace and can be saved manually as a .mat file
-if desired.
+The only output as of 2015-05-28 is a series of plots.  No log is produced, but all variables are dumped to the workspace and can be saved manually as a .mat file if desired.
