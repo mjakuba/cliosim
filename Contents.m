@@ -42,7 +42,7 @@
 %   bgcFeedback.m          - implements closed loop control of depth.
 %   bgcIntegrator.m        - Implements the I term in a PID loop.
 %   bgcF.m                 - Vehicle dynamics from vehicle model.  Wraps ode45.
-%   bgcPlot.m              - Plot simulation output.oo
+%   bgcPlot.m              - Plot simulation output.
 %
 % Environment
 %
