@@ -185,6 +185,11 @@ prm.components = bgcAddComponent(f,prm.components);
 % 2016/03/23 20:36:00  MVJ  Silicone oil is highly responsive to temperature.  A postive vehicle at the surface
 %                           may be very negative at 20 m.   Have to use a fairly shallow ballast depth.
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
+fprintf('Vehicle''s net bulk modulus and net thermal coefficient of expansion, w/o compressee: kappa = %.2g; alpha = %.2g\n',1/prmc.chi,prmc.alpha);
+% 2018/10/17 12:26:30. Data from clio005 says the actual compressibility was about prmc.chi = 1/4.8e9;  This requires
+% huge amounts of silicone oil (340 kg) to compensate.  Makes sense, should be about half vehicle mass.  Prediction
+% here was a bulk modulus of 2.5e9, much closer to seawater.  Unclear why we were so far off.   The data from
+% Trelleborg actually indicates a slightly lower bulk modulus than this simulation assumed.  This model has only 2 SUPRs.
 o = bgcInitComponent('silicone oil compressee');
 o.rho = siliconeoil.density;
 o.alpha = siliconeoil.coeffThermalExpansion;
