@@ -76,19 +76,22 @@ assert(strcmp('drop weight',dropweight.name), ...
     'Did not find drop weight at expected position in components list!');
 
 if ~descentCntrl.active
+  disp('Descent!')
+  % @@@ will probably have to alter this too.  This thing is set up here to engage and disengage the depth controller
+  % @@@ once within a band, but we are writing a controller now that is always engaged.  might be able to handle that
+  % @@@ using the active flag.
   ZthrustDescent = descentCntrl.event_prm{2};
   Zthrust = ZthrustDescent;
 elseif cntrl.active
-  Kp = cntrl.event_prm{5};
-  Kd = cntrl.event_prm{6};
-  Ki = cntrl.event_prm{7};
-  Zff = cntrl.event_prm{8};
+  fFeedback = cntrl.event_prm{5};
   % Determine goal.  Assume it is closest to current state.
   % This relies on the controller being good enough to avoid
   % falling into the "well" of another goal depth.
+  % @@@ this scheme for identifying the goal depth totally will not work.
   [nul,izg] = min(abs(cntrl.event_prm{1}-z)); 
   zg = cntrl.event_prm{1}(izg);
-  Zthrust = bgcFeedback(t,zt,z,zg,Kp,Kd,Ki,Zff);
+  Zthrust = fFeedback(t,zt,z,zg,cntrl.event_prm(6:end));
+  
 elseif dropweight.active % This has nothing to do with dropweight - it is the open loop thrust up between when the controller is engaged.
   bgcIntegrator(t,0,[],[]); % reset integrator
   Zmax = cntrl.event_prm{9};

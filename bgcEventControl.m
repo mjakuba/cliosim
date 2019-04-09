@@ -12,13 +12,15 @@ persistent tEngage;
 % Decompose state vector
 zt = y(1);
 z = y(2);
-
 % Engage controller on upcast when within depth bands of interest.
 if zt < 0
   zValue = min(abs(z-zFilter)-zTol);  % < 0 when within a control band.
 else
   zValue = 1;
 end
+
+[~,ii] = min(abs(z-zFilter));
+[zt z zFilter(ii) zValue]
 
 % Mark engagement time.
 if zValue < 0 && isempty(tEngage)
