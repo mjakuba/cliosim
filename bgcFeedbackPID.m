@@ -9,6 +9,7 @@ Kp = prm{1};
 Kd = prm{2};
 Ki = prm{3};
 Zff = prm{4};
+Zmax = prm{5};
 
 % Rate error.
 zte = 0-zt;
@@ -22,3 +23,6 @@ ize = bgcIntegrator(t,ze);
 % Feedback.
 Zthrust = Kp*ze + Kd*zte + Ki*ize + Zff;
 
+if abs(Zthrust) > Zmax
+  Zthrust = sign(Zthrust)*Zmax;
+end

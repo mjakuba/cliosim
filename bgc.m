@@ -47,30 +47,7 @@ clear functions;  % Persistent variables are used for some timing operations.
 while tout(end) < tend && ~stop
   
   [t,y,te,ye,ie] = ode45(@(t,y) bgcF(t,y,prm),[tstart tend],yout(end,:),odeOptions);
-  
-  % Recover some non-state data from simulation for this segment.  Requires
-  % careful treatment of integrator in feedback.
-  [tize,ize] = bgcIntegrator(t(end),0); % get integral error at end of this segment
-  bgcIntegrator(t(1),0,tize_last,ize_last); % reset integral error back to beginning of this segment
-  ii = length(tout)+[1:length(t)];
-  [Zbuoyancy(ii,1),Zdrag(ii,1),Zthrust(ii,1), ...
-	rho(ii,1),theta(ii,1),p(ii,1), ...
-	mf(ii,1),Vf(ii,1),thetaf(ii,1), ...
-	alphaf(ii,1),chif(ii,1),cpf(ii,1), ...
-	Re(ii,1)] = deal(NaN*ones(length(t),1));
-  for n=1:length(t)
-    nn = length(tout) + n;
-    [nul,Zbuoyancy(nn),Zdrag(nn),Zthrust(nn), ...
-	  rho(nn),theta(nn),p(nn), ...
-	  mf(nn),Vf(nn),thetaf(nn), ...
-	  alphaf(nn),chif(nn),cpf(nn), ...
-	  Re(nn)] = ...
-	bgcF(t(n),y(n,:),prm);
-  end
-  bgcIntegrator(t(end),0,tize,ize); % Necessary?
-  tize_last = tize;
-  ize_last = ize;
-  
+    
   % (De)Activate any components whose events occurred.  All events 
   % are assumed to be toggles.
   for iie = 1:length(ie)
@@ -127,6 +104,40 @@ while tout(end) < tend && ~stop
   
   % Update initial time for next segment of sim.
   tstart = tout(end);
+  
+end
+
+dump;
+
+% Recover some non-state data from simulation.
+clear functions  % Reset persistent variables.
+prm = bgcParam;  % Reload parameters (to reset components' active/inactive flags).
+ii = 1:length(tout); 
+[Zbuoyancy(ii,1),Zdrag(ii,1),Zthrust(ii,1), ...
+      rho(ii,1),theta(ii,1),p(ii,1), ...
+      mf(ii,1),Vf(ii,1),thetaf(ii,1), ...
+      alphaf(ii,1),chif(ii,1),cpf(ii,1), ...
+      Re(ii,1),zg(ii,n)] = deal(NaN*ones(length(tout),1));
+for n=1:length(tout)
+  
+  [~,Zbuoyancy(n),Zdrag(n),~, ...
+	rho(n),theta(n),p(n), ...
+	mf(n),Vf(n),thetaf(n), ...
+	alphaf(n),chif(n),cpf(n), ...
+	Re(n),zg(n)] = ...
+      bgcF(tout(n),yout(n,:),prm);
+
+  % Reconstruct thrust.  The value returned by bgcF is wrong because the integrator behaves differently
+  % during replay.  (The acceleration returned by bgcF is also wrong because the force computed inside is
+  % wrong.
+  if n > 1
+    ztt = (yout(n,1) - yout(n-1,1))/(tout(n)-tout(n-1));
+  else
+    ztt = 0;
+  end
+  Zthrust(n) = ztt*(prm.h + mf(n)) - Zbuoyancy(n) - Zdrag(n);
+  
+  [yout(n,:) zg(n) Zthrust(n)]
   
 end
 

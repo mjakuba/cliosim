@@ -19,9 +19,6 @@ else
   zValue = 1;
 end
 
-[~,ii] = min(abs(z-zFilter));
-[zt z zFilter(ii) zValue]
-
 % Mark engagement time.
 if zValue < 0 && isempty(tEngage)
   tEngage = t;

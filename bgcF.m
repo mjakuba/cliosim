@@ -1,4 +1,4 @@
-function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re] = bgcF(t,y,prm)
+function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re,zg] = bgcF(t,y,prm)
 % Float dynamics, for use with ODE45.
 %
 % See notes, 2012-Dec-27 for derivations.
@@ -7,6 +7,15 @@ function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re] = 
 % 2012-12-27    mvj    Created.
 % 2013-01-02    mvj    Modified to enable recovery of
 %                      internal state after sim.
+
+% keep track of mission sample depths.
+persistent tStartSample;
+persistent izg;
+persistent tlast;
+if isempty(izg)
+  izg = 0;  % marks descent.
+  tlast = 0;
+end
 
 % Decompose state vector
 zt = y(1);
@@ -20,7 +29,7 @@ z = y(2);
 % @@@ discharge rate applies to surface volume, not volume at depth, 
 % @@@ but that is almost certainly insignificant.
 for c = 1:length(prm.components)
-  if prm.components(c).active
+  if prm.components(c).active && prm.components(c).discharge_rate ~= 0
     dt = (t-prm.components(c).activate_time);  % time since last activation.
     
     prm.components(c).V = prm.components(c).V - dt*prm.components(c).discharge_rate;
@@ -76,25 +85,56 @@ assert(strcmp('drop weight',dropweight.name), ...
     'Did not find drop weight at expected position in components list!');
 
 if ~descentCntrl.active
-  disp('Descent!')
   % @@@ will probably have to alter this too.  This thing is set up here to engage and disengage the depth controller
   % @@@ once within a band, but we are writing a controller now that is always engaged.  might be able to handle that
   % @@@ using the active flag.
   ZthrustDescent = descentCntrl.event_prm{2};
   Zthrust = ZthrustDescent;
 elseif cntrl.active
-  fFeedback = cntrl.event_prm{5};
-  % Determine goal.  Assume it is closest to current state.
-  % This relies on the controller being good enough to avoid
-  % falling into the "well" of another goal depth.
-  % @@@ this scheme for identifying the goal depth totally will not work.
-  [nul,izg] = min(abs(cntrl.event_prm{1}-z)); 
-  zg = cntrl.event_prm{1}(izg);
-  Zthrust = fFeedback(t,zt,z,zg,cntrl.event_prm(6:end));
+
+  zFilter = cntrl.event_prm{1};
+  zTol = cntrl.event_prm{2};
+  tSampleTime = cntrl.event_prm{3};
+  Zmax = cntrl.event_prm{10};
+  
+  if izg == 0
+    zg = dropweight.event_prm{1}; % initial descent depth.
+  elseif izg > length(zFilter)
+    % hardcoded ascent.
+    %zg = -1000;  weird results somehow sim loops back on itself.
+    zg = NaN;
+  else
+    zg = zFilter(izg);
+  end
+
+  % Handle integrator windup.  Makes no sense while transiting.
+  % @@@ not if PIV.
+  %if abs(z-zg) > zTol
+  %  bgcIntegrator(t,0,[],[]); % reset integrator.  This is critical.  Unclear if better than integral windup.
+  %end
+  
+  
+  if isnan(zg)
+    Zthrust = -Zmax;
+  else
+
+    % Start sample timer once within depth band.
+    if isempty(tStartSample) && abs(z-zg) <= zTol
+      tStartSample = t;
+    elseif (t-tStartSample) - tSampleTime  > 0 % sample done.
+      tStartSample = [];
+      izg = izg + 1;
+      fprintf(1,'New goal sample depth: %.1f\n',zg);
+    end
+    
+    fFeedback = cntrl.event_prm{5};
+    Zthrust = fFeedback(t,zt,z,zg,cntrl.event_prm(6:end));
+    
+  end
   
 elseif dropweight.active % This has nothing to do with dropweight - it is the open loop thrust up between when the controller is engaged.
   bgcIntegrator(t,0,[],[]); % reset integrator
-  Zmax = cntrl.event_prm{9};
+  Zmax = cntrl.event_prm{10};
   Zthrust = -Zmax;
 else
   bgcIntegrator(t,0,[],[]); % reset integrator
@@ -104,5 +144,5 @@ end
 % Compute acceleration.
 ztt = 1/(prm.h + m)*(Zbuoyancy + Zdrag + Zthrust);
 
-% Create output vector.
+% Create output vector.  
 yt = [ztt; zt];
