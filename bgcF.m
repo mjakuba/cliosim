@@ -20,6 +20,8 @@ end
 % Decompose state vector
 zt = y(1);
 z = y(2);
+ize = y(3);
+izte = y(4);
 
 % Compute in situ properties.
 [rho,theta,p] = bgcInSitu(z,prm.profile);
@@ -84,6 +86,12 @@ dropweight = prm.components(end-2);
 assert(strcmp('drop weight',dropweight.name), ...
     'Did not find drop weight at expected position in components list!');
 
+% Default integral error rates.
+ze = 0; zte = 0; 
+
+% @@@ 2019/04/10 19:58:41  bgcIntegrator is deprecated.  There is no way presently to reset the integration
+% now performed by ode45.  It can be saturated (see bgcFeedbackPIV).  Doesn't seem worth figuring out how to
+% do this because the PIV scheme is clearly superior and avoids the need for any controller switching.
 if ~descentCntrl.active
   % @@@ will probably have to alter this too.  This thing is set up here to engage and disengage the depth controller
   % @@@ once within a band, but we are writing a controller now that is always engaged.  might be able to handle that
@@ -101,7 +109,6 @@ elseif cntrl.active
     zg = dropweight.event_prm{1}; % initial descent depth.
   elseif izg > length(zFilter)
     % hardcoded ascent.
-    %zg = -1000;  weird results somehow sim loops back on itself.
     zg = NaN;
   else
     zg = zFilter(izg);
@@ -115,7 +122,7 @@ elseif cntrl.active
   
   
   if isnan(zg)
-    Zthrust = -Zmax;
+    Zthrust = -Zmax;  % hard-coded ascent.
   else
 
     % Start sample timer once within depth band.
@@ -128,21 +135,21 @@ elseif cntrl.active
     end
     
     fFeedback = cntrl.event_prm{5};
-    Zthrust = fFeedback(t,zt,z,zg,cntrl.event_prm(6:end));
+    [Zthrust,ze,zte] = fFeedback(t,zt,z,ize,izte,zg,cntrl.event_prm(6:end));
     
   end
   
 elseif dropweight.active % This has nothing to do with dropweight - it is the open loop thrust up between when the controller is engaged.
-  bgcIntegrator(t,0,[],[]); % reset integrator
+  %@@@@bgcIntegrator(t,0,[],[]); % reset integrator
   Zmax = cntrl.event_prm{10};
   Zthrust = -Zmax;
 else
-  bgcIntegrator(t,0,[],[]); % reset integrator
+  %@@@@@bgcIntegrator(t,0,[],[]); % reset integrator
   Zthrust = 0;
 end
 
 % Compute acceleration.
 ztt = 1/(prm.h + m)*(Zbuoyancy + Zdrag + Zthrust);
 
-% Create output vector.  
-yt = [ztt; zt];
+% Create output vector including integral error terms.  
+yt = [ztt; zt; ze; zte];

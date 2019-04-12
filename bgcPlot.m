@@ -40,6 +40,7 @@ grid on;
 % thrust [N] = 1.4546*(power [W])^(2/3) + -7.4886
 % @@@ this fit is for Bollard in the forward condition only.  
 pwr = ((abs(Zthrust) + 7.4886*(Zthrust~=0))/1.4546).^(3/2);
+warning('Using Tecnadyne thruster model for power estimates!');
 
 figure(3); clf reset;
 subplot(211)
@@ -63,15 +64,14 @@ figure(4); clf reset;
 set(gcf,'position',[1377         303         543         554]);
 subplot(311)
 plot(tout,yout(:,2));
-ie = ones(size(ieout));
-% Controller is always last in component list, but actually we should add
-% a component that is the filtering operation - an event function already 
-% already exists bgcEventFilter - add a component that represents the
-% filtering operation.
-ie(ieout == length(prm.components)) = NaN; 
-ie(1:2) = NaN;
-zsupr = interp1(teout+0.1*rand(length(teout),1),ones(size(teout)).*ie,tout); % add jitter to accommodate interp1 uniqueness requirement.
-zsupr = zsupr.*yout(:,2);
+tsupr = teout(ieout == strmatch('SUPRdriver',strvcat({prm.components.name})));
+tsuprstart = tsupr(1:2:end);
+tsuprstop = tsupr(2:2:end);
+zsupr = NaN*tout;
+for n=1:length(tsuprstart)
+  ii = (tout >= tsuprstart(n) & tout < tsuprstop(n));
+  zsupr(ii) = yout(ii,2);
+end
 line(tout,zsupr,'color','r');
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');

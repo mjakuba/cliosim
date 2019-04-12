@@ -19,8 +19,12 @@ zo = 0; % [m]
 zto = 0; % [m/s]
 thetao = prm.theta; % [K]  Not used.
 
+% integral errors
+izeo = 0;
+izteo = 0;
+
 % Solver parameters
-yo = [zto; zo];
+yo = [zto; zo; izeo; izteo];
 tstart = 0; % [s]
 tend = 50000; % [s]
 % @@@ Event functions sometimes problematic for large maxstep.  Not sure how to improve that behavior without
@@ -110,6 +114,7 @@ end
 dump;
 
 % Recover some non-state data from simulation.
+fprintf(1,'Replaying to recover non-state data...');
 clear functions  % Reset persistent variables.
 prm = bgcParam;  % Reload parameters (to reset components' active/inactive flags).
 ii = 1:length(tout); 
@@ -117,29 +122,18 @@ ii = 1:length(tout);
       rho(ii,1),theta(ii,1),p(ii,1), ...
       mf(ii,1),Vf(ii,1),thetaf(ii,1), ...
       alphaf(ii,1),chif(ii,1),cpf(ii,1), ...
-      Re(ii,1),zg(ii,n)] = deal(NaN*ones(length(tout),1));
+      Re(ii,1),zg(ii,1)] = deal(NaN*ones(length(tout),1));
 for n=1:length(tout)
   
-  [~,Zbuoyancy(n),Zdrag(n),~, ...
+  [~,Zbuoyancy(n),Zdrag(n),Zthrust(n), ...
 	rho(n),theta(n),p(n), ...
 	mf(n),Vf(n),thetaf(n), ...
 	alphaf(n),chif(n),cpf(n), ...
 	Re(n),zg(n)] = ...
       bgcF(tout(n),yout(n,:),prm);
-
-  % Reconstruct thrust.  The value returned by bgcF is wrong because the integrator behaves differently
-  % during replay.  (The acceleration returned by bgcF is also wrong because the force computed inside is
-  % wrong.
-  if n > 1
-    ztt = (yout(n,1) - yout(n-1,1))/(tout(n)-tout(n-1));
-  else
-    ztt = 0;
-  end
-  Zthrust(n) = ztt*(prm.h + mf(n)) - Zbuoyancy(n) - Zdrag(n);
-  
-  [yout(n,:) zg(n) Zthrust(n)]
   
 end
+fprintf(1,'Done.\n');
 
 % Dump variables to workspace
 dump;
