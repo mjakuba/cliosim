@@ -38,6 +38,16 @@ prm.profile = bgcProfile(prm.const);
 % * surface area, As [m^2]
 % * frontal area, Af [m^2]
 % * characteristic diameter, D [m]
+% 2021-11-19  clio026 took about 200 N to move through the water at 55 m/min.
+%             It was in the unstable regime at that speed, and as evidenced
+%             by roll and pitch.  Taken at face value,
+%             Z = 200 = 1/2*1030*(55/60)^2*Cdu*Af
+%             => Cdu = 0.56 
+%             Below it says 0.63 which must have been computed about the
+%             same way.
+% 2021-11-20  analysis in support of science robotics paper came up with
+%             a CDd = 0.44 including a model fit to thruster properties
+%             at speed.
 prm.theta = 300; % [K]
 prm.h = 10; % [kg]
 prm.CDs = 0; % [-]
