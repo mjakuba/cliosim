@@ -122,3 +122,22 @@ xlabel('Time (hh:mm:ss)');
 ch = getch(gcf,'axes');
 set(ch(2),'xticklabel',[]);
 vstretch(0);
+
+% For isopycnal RAFOS float study.
+figure(6); clf reset;
+subplot(211)
+plot(tout,yout(:,2));
+set(gca,'ydir','reverse');
+ylabel('Depth (m)');
+grid on;
+
+subplot(212)
+pden = sw_pden(S,theta-273.15,p*1e-4,0);
+plot(tout,[rho,pden,mf./Vf]);
+legend('Ambient Density','Ambient Pot. Density','Profiler Density');
+ylabel('Density (kg/m^3)');
+grid on;
+ylim([1010 1110]);
+tticklabel('abs',3600*1);
+xlabel('Time (hh:mm:ss)');
+

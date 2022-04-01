@@ -1,4 +1,4 @@
-function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re,zg] = bgcF(t,y,prm)
+function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re,zg,S] = bgcF(t,y,prm)
 % Float dynamics, for use with ODE45.
 %
 % See notes, 2012-Dec-27 for derivations.
@@ -7,6 +7,9 @@ function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re,zg]
 % 2012-12-27    mvj    Created.
 % 2013-01-02    mvj    Modified to enable recovery of
 %                      internal state after sim.
+% 2022-03-14    mvj    add S output for isopycnal RAFOS study.
+
+
 
 % keep track of mission sample depths.
 persistent tStartSample;
@@ -23,8 +26,33 @@ z = y(2);
 ize = y(3);
 izte = y(4);
 
+fprintf(1,'\b\b\b\b\b\b\b\b\b\b\b\b\b\b%9.3f m',z);
+
 % Compute in situ properties.
-[rho,theta,p] = bgcInSitu(z,prm.profile);
+% Displace the water column if specified.
+if isfield(prm.profile,'displacement')
+    switch prm.profile.displacement.type
+      case 'sinusoidal'
+        % not implemented because the dynamics do not account for motion of the ambient water column.
+      case 'step'
+        % get insitu S,T for displaced water.
+        if t > prm.profile.displacement.step.tstep
+            dz = prm.profile.displacement.step.step;
+            [~,T_K,~,~,~,~,S,~] = bgcInSitu(z+dz,prm.profile);
+            % move displaced water to current depth and compute insitu properties.
+            p_db = sw_pres(z,0); 
+            T_C = T_K - 273.15;
+            T_C = T_C + dz*sw_adtg(S,T_C,p_db); % water will be adiabatically cooled or heated. 1st order approx.
+            rho = sw_dens(S,T_C,p_db);
+            p = p_db*1e4 + prm.const.atm;
+            theta = T_C + 273.15;
+        else
+            [rho,theta,p,~,~,~,S] = bgcInSitu(z,prm.profile);
+        end
+    end
+else
+    [rho,theta,p,~,~,~,S] = bgcInSitu(z,prm.profile);
+end
 
 % Modify the mass and volume of any active components.  This supports
 % discharging only.
@@ -146,6 +174,7 @@ elseif dropweight.active % This has nothing to do with dropweight - it is the op
 else
   %@@@@@bgcIntegrator(t,0,[],[]); % reset integrator
   Zthrust = 0;
+  zg = NaN; % no goal depth if there is no controller running.
 end
 
 % Compute acceleration.

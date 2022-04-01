@@ -6,6 +6,7 @@
 % 2014-10-07    mvj    Fixed output event list wrt wierd extra non-terminal events sometimes generated 
 %                      at start of new simulation segment
 
+clear;
 
 % Set up paths
 addpath('./seawater');
@@ -15,9 +16,16 @@ addpath('./util');
 prm = bgcParam;
 
 % Set initial conditions.
-zo = 0; % [m]
-zto = 0; % [m/s]
-thetao = prm.theta; % [K]  Not used.
+if isfield(prm,'solver')
+    zo = prm.solver.zo
+    zto = prm.solver.zto
+    thetao = prm.solver.thetao;
+else
+    zo = 0; % [m]
+    zto = 0; % [m/s]
+    thetao = prm.theta; % [K]  Not used.
+end
+
 
 % integral errors
 izeo = 0;
@@ -26,7 +34,11 @@ izteo = 0;
 % Solver parameters
 yo = [zto; zo; izeo; izteo];
 tstart = 0; % [s]
-tend = 50000; % [s]
+if isfield(prm,'solver')
+    tend = prm.solver.tend;
+else
+    tend = 50000; % [s]  % used for typical Clio simulation.
+end
 % @@@ Event functions sometimes problematic for large maxstep.  Not sure how to improve that behavior without
 % @@@ two event functions devoted to each depth interval of interest so that zero crossings are guaranteed.
 odeOptions = odeset('MaxStep',2, ...
@@ -122,14 +134,13 @@ ii = 1:length(tout);
       rho(ii,1),theta(ii,1),p(ii,1), ...
       mf(ii,1),Vf(ii,1),thetaf(ii,1), ...
       alphaf(ii,1),chif(ii,1),cpf(ii,1), ...
-      Re(ii,1),zg(ii,1)] = deal(NaN*ones(length(tout),1));
+      Re(ii,1),zg(ii,1),S(ii,1)] = deal(NaN*ones(length(tout),1));
 for n=1:length(tout)
-  
   [~,Zbuoyancy(n),Zdrag(n),Zthrust(n), ...
 	rho(n),theta(n),p(n), ...
 	mf(n),Vf(n),thetaf(n), ...
 	alphaf(n),chif(n),cpf(n), ...
-	Re(n),zg(n)] = ...
+	Re(n),zg(n),S(n)] = ...
       bgcF(tout(n),yout(n,:),prm);
   
 end

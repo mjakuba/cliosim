@@ -1,10 +1,11 @@
-function [rho,theta,p,drhodz,dthetadz,dpdz] = bgcInSitu(z,profile)
+function [rho,theta,p,drhodz,dthetadz,dpdz,S,dSdz] = bgcInSitu(z,profile)
 % Compute basic in situ properties at depth z for a given profile.
 %
 % Revision History
 % 2012-12-27    mvj    Created.
 % 2012-12-28    mvj    Added output parameters.
 % 2012-12-28    mvj    defined slopes at a profile depth z as the slope immediately below z.
+% 2022-03-04    mvj    Add in situ salinity as an output.
 
 
 izabove = find(z >= profile.z,1,'last');
@@ -18,3 +19,5 @@ rho = profile.rho(izabove) + drhodz*(z-profile.z(izabove));
 theta = profile.theta(izabove) + dthetadz*(z-profile.z(izabove));
 p = profile.p(izabove) + dpdz*(z-profile.z(izabove));
 
+dSdz = diff(profile.S(iz))/diff(profile.z(iz));
+S = profile.S(izabove) + dSdz*(z-profile.z(izabove));
