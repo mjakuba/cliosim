@@ -31,7 +31,7 @@ seawater.density = 1030; % [kg/m^3]
 seawater.thermalConductivity = NaN; % [W/m/K]
 seawater.specificHeat = 3850; % [J/kg/K]
 rnalater.density = 1340; % [kg/m^3]
-aluminum.coeffThermalExpansion = 23.1e-6; % [m/m/K @ 25 C]
+aluminum.coeffThermalExpansion = 23.1e-6; % [m/m/K @ 25 C]  % 6061: 23.6e-6
 aluminum.bulkModulus = 76e9; % [Pa]
 aluminum.density = 2.7e-3*100^3; % [kg/m^3 @ 20 C]
 aluminum.thermalConductivity = 237; % [W/m/K]
@@ -116,3 +116,20 @@ siliconeoil.bulkModulus = 158370*PSI2PA; % [Pa]
 siliconeoil.density = 966; % [kg/m^3]
 siliconeoil.thermalConductivity = NaN; % [W/m/K]  Clearco does have this data if we need it.
 siliconeoil.specificHeat = 1370; % [J/kg/K]
+                                 
+% polypro - youngs modulus - 1200 MPa, poissons ratio 0.42
+warning('some float materials not fully specified!')
+polypropylene.coeffThermalExpansion = 1/3*80e-6;
+polypropylene.bulkModulus = inf;
+polypropylene.density = 900; % [kg/m^3]
+polyurethane.coeffThermalExpansion = 1/3*57.6e-6;
+polyurethane.bulkModulus = inf;
+polyurethane.density = 1100; % [kg/m^3] Variable
+% rubber is highly variable.
+rubber.coeffThermalExpansion = 1/3*30e-5;
+rubber.bulkModulus = inf;
+rubber.density = 1500;
+% RAFOS float glass from Smith and Riser 1994.  (For the glass as a material, not the tube)
+borosilicate_glass.coeffThermalExpansion = 1/3*11e-6;
+borosilicate_glass.bulkModulus = inf;
+borosilicate_glass.density = NaN;
