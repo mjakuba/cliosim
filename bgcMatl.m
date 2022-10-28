@@ -118,16 +118,17 @@ siliconeoil.thermalConductivity = NaN; % [W/m/K]  Clearco does have this data if
 siliconeoil.specificHeat = 1370; % [J/kg/K]
                                  
 % polypro - youngs modulus - 1200 MPa, poissons ratio 0.42
-warning('some float materials not fully specified!')
 polypropylene.coeffThermalExpansion = 1/3*80e-6;
-polypropylene.bulkModulus = inf;
+polypropylene.compressiveModulus = 1.38e9; % [Pa] this is Young's Modulus, matweb.com
+polypropylene.shearModulus = 0.8e9; % [Pa] range from matweb.com
+polypropylene.bulkModulus = polypropylene.compressiveModulus*polypropylene.shearModulus/(3*(3*polypropylene.shearModulus-polypropylene.compressiveModulus)); % [Pa] this ends up being very compressible.  ~0.4 GPa
 polypropylene.density = 900; % [kg/m^3]
 polyurethane.coeffThermalExpansion = 1/3*57.6e-6;
-polyurethane.bulkModulus = inf;
+polyurethane.bulkModulus = 4.6e9; % [Pa] matweb.com
 polyurethane.density = 1100; % [kg/m^3] Variable
 % rubber is highly variable.
 rubber.coeffThermalExpansion = 1/3*30e-5;
-rubber.bulkModulus = inf;
+rubber.bulkModulus = 10e9; % [Pa] https://www.sciencedirect.com/science/article/abs/pii/0032386194903042
 rubber.density = 1500;
 % RAFOS float glass from Smith and Riser 1994.  (For the glass as a material, not the tube)
 borosilicate_glass.coeffThermalExpansion = 1/3*11e-6;

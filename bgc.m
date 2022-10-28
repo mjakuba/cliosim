@@ -1,3 +1,4 @@
+function bgc
 % BGC Profiler simulation master file.
 %
 %

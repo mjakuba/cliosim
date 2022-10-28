@@ -8,7 +8,7 @@ function [prm,components] = bgcParam
 % o use some kind of controller to get 
 
 % Mission parameters
-BALLAST_DEPTH = 400;
+BALLAST_DEPTH = 400; % HF 2022-06-06: 260-300 dbar or 560-640 dbar
 
 % Load conversion constants.
 bgcConversions;
@@ -81,13 +81,25 @@ prm.D = 0.5; % [m]
 chi = 1/sw_seck(S_PSU,T_K-273.15,P_Pa*1e-4)/1e5; % isopycnal at target depth
 
 % compressee design.
-MARGIN = 1.0;
-CS = MARGIN*chi;  % design compressibility
-CF = 2.980e-6*1e-4;  % from calibrations
-VF = 11632*1e-6; 
-VC = 976*1e-6;  % this is mostly the structure. the active volume is small.
-comp = CS*(VC+VF)-CF*VF;  % for a piston this is 1/K*(pi*D^2/4)^2  [m^5/N] or [m^3/Pa] or [cc/Pa]*1e-6
-CC = comp/VC;
+% 2022-07-27 Get some parameters from the root workspace to allow iteration.
+ENSEMBLE = true;
+if ENSEMBLE
+    CF = evalin('base','CF');
+else
+    CF = 2.956e-6*1e-4; % [1/Pa] from CICESE ballast sheets (and used in Seascan design, 2022-06-01)
+end
+VF = 12125*1e-6; % [m^3] 2022-06-01 design
+% This is what you would do, not what the design necessarily is.
+%MARGIN = 1.0;
+%CS = MARGIN*chi;  % design compressibility
+%VC = 990*1e-6;  % 2022-06-01 design; This is mostly the structure. the active volume is small.
+%comp = CS*(VC+VF)-CF*VF;  % for a piston this is 1/K*(pi*D^2/4)^2  [m^5/N] or [m^3/Pa] or [cc/Pa]*1e-6
+%CC = comp/VC;
+
+% @@@@@@@@@@@@@@@@@ Wrong!  We need CF from Seascan design + variability, but CS should be
+% and this is then still assuming that the compressee components have no variability, which is probably
+% a pretty bad assumption given the use of plastics
+% also need to update to 7075.
 
 % The float, excluding the compressee and final ballasting to make it neutral.
 % @@@ masses and volumes a little arbitrary from CICESE ballast sheets
@@ -101,7 +113,7 @@ CC = comp/VC;
 
 % compressee - lumped approximate version.
 %c = bgcInitComponent('Compressee');
-%c.V = VC; 
+%c.V = VC; % 2022-07-27  This works out if VC an CC are computed as above, but this is not the active volume alone.
 %c.rho = 0.5*aluminum.density; % guess at adjustment for oil volume. 
 %c.m = c.rho*c.V;
 %c.chi = CC; % this assumes the active volume change completely dominates any contraction of the rest of the device.
@@ -109,60 +121,60 @@ CC = comp/VC;
 %prm.components = bgcAddComponent(c,prm.components);
 
 % Detailed component breakdown.
-% @@@@ working here.  Have to sort out the float weight and dimensions to make this thing actually positive.
-% @@@@ and compressee calcs need to be revised s.t. the active and passive volumes are separated, with the
-% @@@@ passive volumes handled separately below.
-c = bgcInitComponent('Float');  % This is the glass and everything inside but does not include the endcap.
-c.V = 1700 * pi*(90/2)^2 * 1e-9;  % HHF's calcs from 2022-Mar from quote Q1078
-c.m = 11217*1e-3; % from CICESE ballast sheets.  Masses for components below are estimated from densities.  Float has to be net buoyant pre-ballasting.
-c.rho = c.m/c.V;
-c.chi = CF; % @@@@ probably needs revision for EMC design.
-c.alpha = borosilicate_glass.coeffThermalExpansion;
-prm.components = bgcAddComponent(c);
-%
-% c = bgcInitComponent('CompresseeActiveVolume') % components are handled below.  This captures the action of the spring.
-% c.V = ;
-
-
 c = bgcInitComponent('DropWeightHolder');  % this is the spacer, was UHMW, now Al
 c.V = 133*1e-6;
 c.rho = aluminum.density;
 c.m = c.rho*c.V;
-c.chi = aluminum.bulkModulus;
+c.chi = 1/aluminum.bulkModulus;
 c.alpha = aluminum.coeffThermalExpansion;
-prm.components = bgcAddComponent(c,prm.components);
+prm.components = bgcAddComponent(c);
 
 c = bgcInitComponent('EndCap');
 c.V = 192*1e-6;
 c.rho = aluminum.density;
 c.m = c.rho*c.V;
-c.chi = aluminum.bulkModulus;
+c.chi = 1/aluminum.bulkModulus;
 c.alpha = aluminum.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
 
-c = bgcInitComponent('CompresseeAl6061Assy'); % all the Al 6061 parts, including the spring.
-c.V = (830 - 2.3 - 7 - 2.36 - 1)*1e-6;
-c.rho = aluminum.density;
-c.m = c.rho*c.V;
-c.chi = aluminum.bulkModulus;
-c.alpha = aluminum.coeffThermalExpansion;
+c = bgcInitComponent('Float');  % This is the glass and everything inside but does not include the endcap.
+cn = {'DropWeightHolder','EndCap'};
+c.V = VF; % [m^3]
+for n=1:length(cn)
+    ii = length(prm.components);
+    assert(~isempty(strfind(cn,prm.components(ii).name)));
+    c.V = c.V - prm.components(ii).V;
+end
+c.m = 12.6-2.6 % [kg] 2022-06-01 design, total estimated weight - estimated compressee weight.
+c.rho = c.m/c.V;
+c.chi = CF; % defined above.
+c.alpha = borosilicate_glass.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
 
+c = bgcInitComponent('CompresseeActiveVolume') % components are handled below.  This captures the action of the spring.
+SPRINGK = 554.4e2; % N/m  2022-06-01 design.
+DPISTON = 2.051e-2; % m  2022-06-01 design.
+LPISTON = 4.2e-2; % m
+c.V = LPISTON*pi*DPISTON^2/4; % total throw. 
+c.rho = 0;
+c.m = 0; % oil is modeled separately.
+c.chi = (1/SPRINGK*(pi*DPISTON^2/4)^2)/c.V; 
+c.alpha = 0;
+prm.components = bgcAddComponent(c,prm.components);
 
 c = bgcInitComponent('CompresseeDiaphram');
 c.V = 2.3*1e-6;
 c.rho = rubber.density;
 c.m = c.V*c.rho;
-c.chi = rubber.bulkModulus;
+c.chi = 1/rubber.bulkModulus;
 c.alpha = rubber.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
-
 
 c = bgcInitComponent('CompresseeOilTube');
 c.V = 7*1e-6;
 c.rho = polyurethane.density;
 c.m = c.rho*c.V;
-c.chi = polyurethane.bulkModulus;
+c.chi = 1/polyurethane.bulkModulus;
 c.alpha = polyurethane.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
 
@@ -170,7 +182,7 @@ c = bgcInitComponent('CompresseeOilTubeFitting');
 c.V = 2.36*1e-6;
 c.rho = polypropylene.density;
 c.m = c.rho*c.V;
-c.chi = polypropylene.bulkModulus;
+c.chi = 1/polypropylene.bulkModulus;
 c.alpha = polypropylene.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
 
@@ -179,7 +191,7 @@ c = bgcInitComponent('CompresseeOilTubePlug');
 c.V = 1*1e-6;
 c.rho = polypropylene.density;
 c.m = c.rho*c.V;
-c.chi = polypropylene.bulkModulus;
+c.chi = 1/polypropylene.bulkModulus;
 c.alpha = polypropylene.coeffThermalExpansion;
 prm.components = bgcAddComponent(c,prm.components);
 
@@ -188,29 +200,44 @@ prm.components = bgcAddComponent(c,prm.components);
 % the assembly contains 3.72 cc + 4.5 cc of oil.  At max extension, it contains 11.12 cc + 4.5 cc of oil.
 % The compensation tube is 1.4" ID tube, ~ 7" long.  When full its volume would be 5.6 cc.  That's actually not
 % enough since the delta between full extension and bottoming out is 7.4 cc
-% @@@ take at face value for now.
+% Take at face value for now.
+% 2022-06-01 update.  Volume of oil is 3.4 cc (oil in the rod) + 13.6 (oil below the bellofram when fully relaxed) + 9 (minimum compensator oil) + an unk margin volume in the comp.  Perhaps 30 cc total?
 c = bgcInitComponent('CompresseeOil');
-c.V = 20*1e-6;
+c.V = 30*1e-6;
 c.rho = mineraloil.density;
 c.m = c.rho*c.V;
-c.chi = mineraloil.bulkModulus;
+c.chi = 1/mineraloil.bulkModulus;
 c.alpha = mineraloil.coeffThermalExpansion;  % linear coeff (see bgcMatl.m)
 prm.components = bgcAddComponent(c,prm.components);
 
+c = bgcInitComponent('CompresseeAl6061Assy'); % all the Al parts, mostly 6061 plus the spring 7075.
+cn = {'CompresseeOil','CompresseeDiaphram','CompresseeOilTubePlug','CompresseeOilTubeFitting','CompresseeOilTube'};
+c.V = 990e-6; % 2022-06-01 design
+for n=1:length(cn)
+    ii = length(prm.components);
+    assert(~isempty(strfind(cn,prm.components(ii).name)));
+    c.V = c.V - prm.components(ii).V;
+end
+c.rho = aluminum.density;
+c.m = c.rho*c.V;
+c.chi = 1/aluminum.bulkModulus;
+c.alpha = aluminum.coeffThermalExpansion;
+prm.components = bgcAddComponent(c,prm.components);
 
 %c = bgcInitComponent('CompresseeAir');
+% @@@@@@@@@ do we need to do this?
 
 % Ballast. No effect on the above so long as ballast needs to be added and is added internal to the float.
 % @@@@ assume ballast is installed internal to the floats.  This may not be true.
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
 
-dump; return
 % 2022/04/01 12:24:06 results - all expressed as volumetric.
 % HHF got net alpha = 1.3537e-5 /C (volumetric)
 % w oil, I get 1.7706e-5
 % w/o oil, I get 1.67e-5
 
+%dump; return;
 
 Vc = bgcVolume(prmc.V,prmc.alpha,prmc.chi,(T_K-prm.theta),(P_Pa-prm.const.atm)); % Volume of the system at depth.
 Zc = prm.const.g*prmc.m - Vc*dens_kgpm3*prm.const.g; % (N) buoyancy (<0 indicates system is positive, >0 float is negative).
