@@ -8,6 +8,7 @@ function [yt,Zbuoyancy,Zdrag,Zthrust,rho,theta,p,m,Vf,thetaf,alpha,chi,cp,Re,zg,
 % 2013-01-02    mvj    Modified to enable recovery of
 %                      internal state after sim.
 % 2022-03-14    mvj    add S output for isopycnal RAFOS study.
+% 2025-03-31    mvj    add support for ideal gas
 
 
 
@@ -71,16 +72,28 @@ for c = 1:length(prm.components)
   end
 end
 
-% Derive bulk quantities for profiler.
-[m,V,alpha,chi,cp] = ...
-    bgcBulkParam(prm.components);
 
 % Compute float temperature.
 % @@@ No dynamics yet.  This assumes instantaneous equilibration.
 thetaf = theta;
 
-% Compute volume at this temperature and pressure
-Vf = bgcVolume(V,alpha,chi,(thetaf-prm.theta),(p-prm.const.atm));
+% Compute total volume and mass
+[Vf,m] = deal(0); 
+for c = 1:length(prm.components)
+
+    cc = prm.components(c);
+    fVolume = cc.eos;
+
+    Vf = Vf + fVolume(cc.V,cc.alpha,cc.chi,(thetaf-prm.theta),(p-prm.const.atm),...
+                      prm.theta,prm.const.atm,cc.event_prm(:));
+
+    m = m + cc.m;
+end
+
+% 2025-03-31 bulk parameters for linear equation of state no long supported because
+%            incompatible with ideal gas EoS.
+[alpha,chi,cp] = deal(NaN);
+
 
 % Buoyancy force.
 Zbuoyancy = m*prm.const.g - Vf*rho*prm.const.g;

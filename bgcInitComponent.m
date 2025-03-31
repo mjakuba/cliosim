@@ -13,5 +13,6 @@ component.cp = 0;
 component.active = false;
 component.activate_time = NaN;
 component.discharge_rate = 0; % [m^3/s]
+component.eos = @bgcVolume;
 component.eventf = @bgcEventNone;
 component.event_prm = {};
