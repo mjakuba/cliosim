@@ -139,6 +139,7 @@ if ~descentCntrl.active
   % @@@ using the active flag.
   ZthrustDescent = descentCntrl.event_prm{2};
   Zthrust = ZthrustDescent;
+  zg = NaN;
 elseif cntrl.active
 
   zFilter = cntrl.event_prm{1};
