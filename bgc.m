@@ -136,7 +136,16 @@ ii = 1:length(tout);
       mf(ii,1),Vf(ii,1),thetaf(ii,1), ...
       alphaf(ii,1),chif(ii,1),cpf(ii,1), ...
       Re(ii,1),zg(ii,1),S(ii,1)] = deal(NaN*ones(length(tout),1));
+ne = 1;
 for n=1:length(tout)
+
+
+    % turn components on/off.
+    if ne <= length(teout) && any(tout(n) == teout(ne))
+        prm.components(ieout(ne)).active = ~prm.components(ieout(ne)).active;
+        ne = ne+1;
+    end
+    
   [~,Zbuoyancy(n),Zdrag(n),Zthrust(n), ...
 	rho(n),theta(n),p(n), ...
 	mf(n),Vf(n),thetaf(n), ...

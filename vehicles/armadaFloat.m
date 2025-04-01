@@ -20,16 +20,6 @@ function [prm] = bgcParam
 % o get a representative ocean profile with mesoscale features.
 % Shelf Research Fleet: https://scienceweb.whoi.edu/seasoar/cfrfwhoi/index_profiles.html
 
-% Mission parameters.  Adapt Clio mission to float mission.  Relevant logic is in bgcF.m
-% Ascent is triggered after all samples are complete (bgcF.m).
-BALLAST_DEPTH = 100; 
-CUTOFF_DEPTH = 5; % [m] initial descent to below unstable near-surface neutral depth
-sampleDepths = BALLAST_DEPTH; % [m] Desired stable neutral depth.
-sampleDepthTol = 5; % +/- [m] Sample timer starts once within this band.
-sampleDepthRateTol = 0.1; % +/- [m/s] and depth rate below this figure.
-sampleTime = 600; % [s] time to remain at sample depth.
-sampleTimeLockout = 60; % [s] ?
-
 
 % Load conversion constants.
 bgcConversions;
@@ -46,6 +36,19 @@ prm.solver.zto = 0; % [m/s]
 prm.solver.thetao = NaN;  % [K] not implemented.
 prm.solver.tend = 3600*8; % s
 
+
+% Mission parameters.  Adapt Clio mission to float mission.  Relevant logic is in bgcF.m
+% Ascent is triggered after all samples are complete (bgcF.m).
+BALLAST_DEPTH = 100; 
+CUTOFF_DEPTH = 5; % [m] initial descent to below unstable near-surface neutral depth
+sampleDepths = BALLAST_DEPTH; % [m] Desired stable neutral depth.
+sampleDepthTol = 5; % +/- [m] Sample timer starts once within this band.
+sampleDepthRateTol = 0.1; % +/- [m/s] and depth rate below this figure.
+sampleTime = 6000; % [s] time to remain at sample depth.
+sampleTimeLockout = 60; % [s] ?
+LOCKOUT_VOLUME = 4000*CC2M3; % [m^3]
+
+
 % The background water column profile.
 %prm.profile = bgcProfile(prm.const,'isopycnal/isothermal');
 %prm.profile =  bgcProfile(prm.const,'pycnoclinic/isohaline');
@@ -59,7 +62,8 @@ prm.solver.tend = 3600*8; % s
 %argo.ii = 56; % Profiles 56 and 83 decently bracket the variability.
 %prm.profile = bgcProfile(prm.const,argo.argoPS(:,argo.ii),argo.argoTE(:,argo.ii),argo.argoPR(:,argo.ii));
 % simplified Agulhas Current profile.
-prm.profile = bgcProfile(prm.const,[35 35.5 35.25 34.5 34.75]',[25 17 13 8 3]',[0 200 400 800 2000]');
+%prm.profile = bgcProfile(prm.const,[35 35.5 35.25 34.5 34.75]',[25 17 13 8 3]',[0 200 400 800 2000]');
+prm.profile = bgcProfile(prm.const,'isopycnal/isothermal');  % this will induce only pressure effects on device.  Seawater in situ density will be affected primarily by pressure, with small effect from salinity.
 
 % The float as a whole has:
 % * a temperature on deck, theta [K]
@@ -71,18 +75,16 @@ prm.profile = bgcProfile(prm.const,[35 35.5 35.25 34.5 34.75]',[25 17 13 8 3]',[
 % * surface area, As [m^2]
 % * frontal area, Af [m^2]
 % * characteristic diameter, D [m]
-% @@@ will need some damping for this to work at all.
 prm.theta = 300; % [K]
 prm.h = 1; % [kg]
-prm.CDs = 0; % [-] @@@@@
-prm.CDf = 0.001; % [-]
-prm.CDd = 0.1; % [-]  
+prm.CDs = 0; % [-] 
+prm.CDf = 0.001; % [-] 
+prm.CDd = 0.1; % [-] 
 prm.CDu = 0.1; % [-]
 prm.D = 6*2.54/100; % [m]
 prm.L = 1.5; % [m]
-prm.As = pi*(prm.D/2)^2; % [m^2]
-prm.Af = pi*prm.D*prm.L; % [m^2]
-
+prm.As = pi*prm.D*prm.L; % [m^2]
+prm.Af = pi*(prm.D/2)^2; % [m^2]
 
 % Each component has:
 % * a name 
@@ -102,30 +104,19 @@ c = bgcInitComponent('Float');  % This is everything except the near-surface com
 c.V = (prm.D/2)^2*prm.L;
 c.m = c.V*1000; % [kg] inclusive of all internal components.  Slightly positive.
 c.rho = c.m/c.V;
-c.chi = 0.1*1/aluminum.bulkModulus;  % @@@ arbitrary increased compressibility to account for elastic deformation of housing.
-c.alpha = aluminum.coeffThermalExpansion;  % [m/K] Assumes internal components exert negligible internal pressure from their own expansion.  Certainly true in for gas-filled housing.
-prm.components = bgcAddComponent(c);
-
-% lockout volume (static volume of gas after lockout).
-% compressibility of the structure surrounding this volume is assumed to
-% have negligible effect on lockout volume.  @@@ valid?  Stable neutral depth is insensitive to this.
-c = bgcInitComponent('Accumulator');
-% @@@@@@@@@@ working here ^^^^
-c.V = 0.1*(prm.D/2)^2*prm.L; % @@@@@@@@ this somehow has to be equal to the lockout volume.
-c.m = c.V*1000; % [kg] inclusive of all internal components.  Slightly positive.
-c.rho = c.m/c.V;
-c.chi = 0.1*1/aluminum.bulkModulus;  % @@@ arbitrary increased compressibility to account for elastic deformation of housing.
-c.alpha = aluminum.coeffThermalExpansion;  % [m/K] Assumes internal components exert negligible internal pressure from their own expansion.  Certainly true in for gas-filled housing.
+% If chi is very large, device is unstable about BALLAST_DEPTH and returns to the surface.  
+c.chi = 20*1/aluminum.bulkModulus;  % @@@ factor of 10 increase is what was computed for Clio housings.  Shallow will be softer.
+c.alpha = aluminum.coeffThermalExpansion;  % [m/K] 
 prm.components = bgcAddComponent(c);
 
 
 % Ballast. No effect on the above so long as ballast needs to be added and is
 % added internal to the float.  This is assumed to apply beyond lockout depth.
+% The lockout volume is added for ballasting.
 prmc = prm;
 [prmc.m,prmc.V,prmc.alpha,prmc.chi,prmc.cp] = bgcBulkParam(prm.components);  % compute effective parameters.
-
 Vc = bgcVolume(prmc.V,prmc.alpha,prmc.chi,(T_K-prm.theta),(P_Pa-prm.const.atm)); % Volume of the system at depth.
-Zc = prm.const.g*prmc.m - Vc*dens_kgpm3*prm.const.g; % (N) buoyancy (<0 indicates system is positive, >0 float is negative).
+Zc = prm.const.g*prmc.m - (Vc + LOCKOUT_VOLUME)*dens_kgpm3*prm.const.g; % (N) buoyancy (<0 indicates system is positive, >0 float is negative).
 assert(Zc < 0,sprintf('Vehicle is negative at %.1f m (%.3f N).  This would require external volume and violate design assumptions.  Abort.',BALLAST_DEPTH,Zc));
 fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at %.1f m\n',-Zc/prm.const.g,BALLAST_DEPTH);
 f = bgcInitComponent('Internal ballast');
@@ -137,14 +128,14 @@ f.V = 0; % inside housing
 prm.components = bgcAddComponent(f,prm.components);
 
 % gas volumes not included in above.
+% Modeled as massless.
 c = bgcInitComponent('Air volume');  % 
 c.V = 5000*CC2M3;  % [m^3] volume at 1 atm, T = prm.theta.
-c.rho = 1.0; % [kg/m^3]  density at STP.
-c.m = c.rho*c.V;
+c.rho = 1000; % [kg/m^3]  density at STP.
+c.m = 0; % set to zero such that ballasting above is accurate. 
 c.eos = @bgcVolumeIdealGas;
-c.active = 1;
 c.eventf = @bgcEventNone;
-c.event_prm = {prm.profile,4000*CC2M3}; % {profile,lockoutVolume}
+c.event_prm = {prm.profile,LOCKOUT_VOLUME}; % {profile,lockoutVolume}
 assert(c.V > c.event_prm{2}); 
 prm.components = bgcAddComponent(c,prm.components);  % gas components handled separately.
 
@@ -156,7 +147,7 @@ prm.components = bgcAddComponent(c,prm.components);  % gas components handled se
 c = bgcInitComponent('descentController');
 c.active = 0;  % 0 indicates active for this component only.  See bgcF.m
 c.eventf = @bgcEventThrustDown;
-c.event_prm = {CUTOFF_DEPTH,100}; % {stop depth [m],down thrust [N]}
+c.event_prm = {CUTOFF_DEPTH,15}; % {stop depth [m],down thrust [N]}
 prm.components = bgcAddComponent(c,prm.components);
 
 % Drop weight not used for floats but needs to appear in component list and
@@ -178,8 +169,7 @@ prm.components = bgcAddComponent(c,prm.components);
 c = bgcInitComponent('controller');
 c.active = 1;
 c.eventf = @bgcEventNone; % always active
-Zmax = 100; % [N] @@@ parameter passing issues btwn bgcF and feedback functions. 
+Zmax = 15; % [N] @@@ parameter passing issues btwn bgcF and feedback functions. 
 c.event_prm = {sampleDepths,sampleDepthTol,sampleTime,sampleTimeLockout,@bgcFeedbackNone,NaN,NaN,NaN,NaN,Zmax,NaN,NaN};
 prm.components = bgcAddComponent(c,prm.components);
 
-prm
