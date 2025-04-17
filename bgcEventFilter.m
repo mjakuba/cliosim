@@ -1,10 +1,11 @@
-function [value,isterminal,direction] = bgcEventFilter(t,y,zFilter,zTol,ztTol,tPump,tLockout)
+function [value,isterminal,direction] = bgcEventFilter(t,y,zFilter,zTol,ztTol,tPump,tLockout,varargin)
 % For use with ODE45.
 %
 % Revision History
 % 2012-12-30    mvj    Created.
 % 2013-01-02    mvj    Added timeout-based disengagement.
 % 2019-04-10    mvj    This is inherently brittle.  It attempts to guess the mission plan excuted in bgcF based on state.
+% 2025-04-07    mvj    allow extra parameters.  This does not seem usable based on the comment above.
 
 
 % Use timeout to disengage pumping.

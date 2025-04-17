@@ -13,6 +13,9 @@ Zmax = prm{5};
 Zballast = prm{6};
 Zww = prm{7};
 
+% Deadband
+Zdead = prm{8};  % set to 0 to disable.
+
 % velocity command
 ze = zg-z;
 ztg = Kp*ze;
@@ -54,10 +57,11 @@ Zff = -Zballast;
 % Feedback (PI on velocity).  I term is hopeless without FF.
 Zthrust = Zff + Ki*izte + Kv*zte;
 
-
 % Saturate.
 if abs(Zthrust) > Zmax
   Zthrust = sign(Zthrust)*Zmax;
+elseif abs(Zthrust) < Zdead
+  Zthrust = 0;
 end
 
 

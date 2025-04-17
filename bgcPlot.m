@@ -4,34 +4,31 @@
 % Revision History
 % 2013-02-05    mvj    Created.
 
+dout = t2d(tout);
 
 figure(1); clf reset;
 subplot(211)
-plot(tout,yout(:,2));
+plot(dout,yout(:,2));
 set(gca,'ydir','reverse');
-tticklabel('abs',3600);
 ylabel('Depth (m)');
 grid on;
 
 subplot(212)
-plot(tout,yout(:,1));
+plot(dout,yout(:,1));
 set(gca,'ydir','reverse');
 ylabel('Depth Rate (m/s)');
-tticklabel('abs',3600);
 grid on;
 
 figure(2); clf reset;
 subplot(211)
-plot(tout,[Zbuoyancy,Zdrag,Zthrust]);
+plot(dout,[Zbuoyancy,Zdrag,Zthrust]);
 legend('Zbuoyancy','Zdrag','Zthrust');
-tticklabel('abs',3600);
 ylabel('Z Force (N)');
 grid on;
 
 subplot(212)
-plot(tout,[rho,mf./Vf,mf]);
+plot(dout,[rho,mf./Vf,mf]);
 legend('Ambient Density','Profiler Density','Profiler Mass');
-tticklabel('abs',3600);
 ylabel('Density (kg/m^3); Mass (kg)');
 grid on;
 
@@ -39,24 +36,40 @@ grid on;
 % Bollard: From tecnadyne data: 
 % thrust [N] = 1.4546*(power [W])^(2/3) + -7.4886
 % @@@ this fit is for Bollard in the forward condition only.  
-pwr = ((abs(Zthrust) + 7.4886*(Zthrust~=0))/1.4546).^(3/2);
-warning('Using Tecnadyne thruster model for power estimates!');
+%pwr = ((abs(Zthrust) + 7.4886*(Zthrust~=0))/1.4546).^(3/2);
+%warning('Using Tecnadyne thruster model for power estimates!');
+% Blue robotics provides some data for their T200 thruster at
+% bollard.  Very coarse fit.  Not confident of functional form.
+if Zthrust > 0
+    pwr = 28*abs(Zthrust/9.81).^(3/2); % [W]
+else
+    pwr = 40*abs(Zthrust/9.81).^(3/2); % [W]
+end
 
 figure(3); clf reset;
-subplot(211)
-plot(tout,pwr);
-tticklabel('abs',3600);
+subplot(411)
+plot(dout,yout(:,2));
+set(gca,'ydir','reverse');
+ylabel('Depth (m)');
+grid on;
+
+subplot(412)
+plot(dout,Zthrust);
+ylabel('Thruster Thrust (N)');
+grid on;
+
+subplot(413)
+plot(dout,pwr);
 ylabel('Thruster Power (W)');
 grid on;
 
-subplot(212)
+subplot(414)
 J2KWH = 1/1000/3600;
-plot(tout,[NaN; J2KWH*cumsum(pwr(2:end).*diff(tout))]);
-tticklabel('abs',3600);
+plot(dout,[NaN; J2KWH*cumsum(pwr(2:end).*diff(tout))]);
 ylabel('Thruster Energy (kWh)');
 grid on;
 
-
+return
 
 % For proposal.
 figure(4); clf reset;
@@ -88,7 +101,6 @@ ylim([1010 1110]);
 subplot(313)
 J2WH = 1/3600;
 plot(tout,pwr,tout,[NaN; J2WH*cumsum(pwr(2:end).*diff(tout))]);
-tticklabel('abs',3600*2);
 ylabel(sprintf('Propulsion Power (W)\nEnergy (Wh)'));
 legend('Power','Energy');
 grid on;

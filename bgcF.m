@@ -17,8 +17,7 @@ persistent tStartSample;
 persistent izg;
 persistent tlast;
 if isempty(izg)
-  izg = 0;  % marks descent.
-  tlast = 0;
+  izg = 1;
 end
 
 % Decompose state vector
@@ -27,7 +26,6 @@ z = y(2);
 ize = y(3);
 izte = y(4);
 
-fprintf(1,'\b\b\b\b\b\b\b\b\b\b\b\b\b\b%9.3f m',z);
 
 % Compute in situ properties.
 % Displace the water column if specified.
@@ -140,16 +138,17 @@ if ~descentCntrl.active
   ZthrustDescent = descentCntrl.event_prm{2};
   Zthrust = ZthrustDescent;
   zg = NaN;
+
 elseif cntrl.active
 
   zFilter = cntrl.event_prm{1};
   zTol = cntrl.event_prm{2};
-  tSampleTime = cntrl.event_prm{3};
-  Zmax = cntrl.event_prm{10};
-  
-  if izg == 0
-    zg = dropweight.event_prm{1}; % initial descent depth.
-  elseif izg > length(zFilter)
+  ztTol = cntrl.event_prm{3};
+  tSampleTime = cntrl.event_prm{4};
+  Zmax = cntrl.event_prm{11};
+  Zdead = cntrl.event_prm{14};
+
+  if izg > length(zFilter)
     % hardcoded ascent.
     zg = NaN;
   else
@@ -162,22 +161,34 @@ elseif cntrl.active
   %  bgcIntegrator(t,0,[],[]); % reset integrator.  This is critical.  Unclear if better than integral windup.
   %end
   
-  
+
   if isnan(zg)
-    Zthrust = -Zmax;  % hard-coded ascent.
+      Zthrust = -Zmax;  % hard-coded ascent.
   else
 
-    % Start sample timer once within depth band.
-    if isempty(tStartSample) && abs(z-zg) <= zTol
+
+      % bgcEventFilter starts and stops sampling when bounds on z, zt are met and z is close enough to
+      % an element of zFilter.  It has no way of keeping track of which sample depth should be active
+      % (izg is not part of the state).  bgcEventFilter can be used to shut the controller on and off
+      % (other events too).  This block is still needed to time samples, though it does still violate
+      % the scheme behind event-based interruptions.  Seems to be benign, at least relative to
+      % toggling the controller here as opposed to using events.
+    if isempty(tStartSample) && abs(z-zg) <= zTol && abs(zt) <= ztTol
       tStartSample = t;
+      fprintf(1,'Starting new sample at depth: %.1f\n',zg);
     elseif (t-tStartSample) - tSampleTime  > 0 % sample done.
       tStartSample = [];
       izg = izg + 1;
-      fprintf(1,'New goal sample depth: %.1f\n',zg);
+      fprintf(1,'Sample complete.  New goal sample depth: %.1f\n',zFilter(izg));
     end
     
-    fFeedback = cntrl.event_prm{5};
-    [Zthrust,ze,zte] = fFeedback(t,zt,z,ize,izte,zg,cntrl.event_prm(6:end));
+    % Run the controller.  
+    fFeedback = cntrl.event_prm{6};
+    [Zthrust,ze,zte] = fFeedback(t,zt,z,ize,izte,zg,cntrl.event_prm(7:end));
+    % Simulate thruster deadband.  Controller could be written to compensate for this.
+    if abs(Zthrust) < Zdead
+        Zthrust = 0;
+    end
     
   end
   
@@ -196,3 +207,6 @@ ztt = 1/(prm.h + m)*(Zbuoyancy + Zdrag + Zthrust);
 
 % Create output vector including integral error terms.  
 yt = [ztt; zt; ze; zte];
+
+% Status.
+fprintf(1,'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%12.1f s %9.3f m %9.3f N  ',t,z,Zthrust);

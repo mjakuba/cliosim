@@ -5,6 +5,13 @@ function [prm] = bgcParam
 %
 % Revision History
 % 2025-03-31    mvj    Created.
+% 2025-04-06    mvj    This version uses PIV and executes a complete cycle back to the surface.
+
+% o ascent to 0 isn't right from energy use perspective.  Want to ascend to above unstable neutral depth,
+%   but not to settle at that depth; rather to drive through.  Driving all the way to the surface is probably close enough.
+% x tuning is way too slow, but seems to work well.  Was able to use piv_design to choose gains.
+% o need to turn off controller in some way, probably use a deadband on thrust, which is realistic anyway.  alternatively
+%   a deadband on depth and depth rate errors.
 
 % General approach:
 % * coarsely model a TR-sized float
@@ -41,10 +48,10 @@ prm.solver.tend = 3600*8; % s
 % Ascent is triggered after all samples are complete (bgcF.m).
 BALLAST_DEPTH = 500; 
 CUTOFF_DEPTH = 5; % [m] initial descent to below unstable near-surface neutral depth
-sampleDepths = BALLAST_DEPTH; % [m] Desired stable neutral depth.
-sampleDepthTol = 5; % +/- [m] Sample timer starts once within this band.
-sampleDepthRateTol = 0.1; % +/- [m/s] and depth rate below this figure.
-sampleTime = 6000; % [s] time to remain at sample depth.
+sampleDepths = [BALLAST_DEPTH 250 -10]; % [m]  Add somewhere above surface to make ascent CL speed.  Ascent is otherwise open loop.  Sim ends on breach of surface.
+sampleDepthTol = 0.1; % +/- [m] Sample timer starts once within this band.
+sampleDepthRateTol = 0.1; % +/- [m/s] and depth rate below this figure.  If too small, replay won't catch this.
+sampleTime = 1000; %7200; % [s] time to remain at sample depth.
 sampleTimeLockout = 60; % [s] ?
 LOCKOUT_VOLUME = 4000*CC2M3; % [m^3]
 
@@ -107,6 +114,7 @@ c.rho = c.m/c.V;
 % If chi is very large, device is unstable about BALLAST_DEPTH and returns to the surface.  
 c.chi = 20*1/aluminum.bulkModulus;  % @@@ factor of 10 increase is what was computed for Clio housings.  Shallow will be softer.
 c.alpha = aluminum.coeffThermalExpansion;  % [m/K] 
+c.eos = @bgcVolumeLinear;
 prm.components = bgcAddComponent(c);
 
 
@@ -125,6 +133,7 @@ f.alpha = 0;  % inside housing
 f.chi = 0; % inside housing
 f.m = -Zc/prm.const.g; % this will add mass only.
 f.V = 0; % inside housing
+f.eos = @bgcVolumeLinear;
 prm.components = bgcAddComponent(f,prm.components);
 
 % gas volumes not included in above.
@@ -144,18 +153,16 @@ prm.components = bgcAddComponent(c,prm.components);  % gas components handled se
 %
 
 % Descent controller for TR is just to thrust down until a certain depth is reached.
+% @@@ possibly might want to reengage this to deal with large initial air volume?
 c = bgcInitComponent('descentController');
-c.active = 0;  % 0 indicates active for this component only.  See bgcF.m
-c.eventf = @bgcEventThrustDown;
-c.event_prm = {CUTOFF_DEPTH,15}; % {stop depth [m],down thrust [N]}
+c.active = 1;  % 1 means disabled for tihs component only.  Use PIV instead.
 prm.components = bgcAddComponent(c,prm.components);
 
-% Drop weight not used for floats but needs to appear in component list and
-% drop depth is used as first sample depth (bgcF.m)
+% Drop weight not used for floats but needs to appear in component list.
 c = bgcInitComponent('drop weight');
 c.active = 0;
 c.eventf = @bgcEventNone;
-c.event_prm = {sampleDepths(1)};
+c.event_prm = {NaN};  % NaN skips using the dropweight depth for initial descent.
 prm.components = bgcAddComponent(c,prm.components);
 
 % Surface and seafloor.  For convenience these are massless components
@@ -168,8 +175,16 @@ prm.components = bgcAddComponent(c,prm.components);
 % sample timeout.
 c = bgcInitComponent('controller');
 c.active = 1;
-c.eventf = @bgcEventNone; % always active
-Zmax = 15; % [N] @@@ parameter passing issues btwn bgcF and feedback functions. 
-c.event_prm = {sampleDepths,sampleDepthTol,sampleTime,sampleTimeLockout,@bgcFeedbackNone,NaN,NaN,NaN,NaN,Zmax,NaN,NaN};
+%c.eventf = @bgcEventNone; % always active
+c.eventf = @bgcEventFilter;  % this doesn't work.
+Zmax = 15; % [N] 
+Zballast = 0; % [N]  This is the assumed and is very nearly correct below cutoff.
+Kp = 0.1; Kv = 10; Ki = 0.7;  % parameters from piv_design_armada.m
+ztmax = 1.0; % [m/s]
+Zww = -0.5*1000*(prm.CDf*prm.As + prm.CDu*prm.Af); % Not used in bgcFeedbackPIV.m  Apparently destabilizing.
+Zdead = 0.3; %0.1; %1.0; % [N] hard to imagine producing less than 0.1 N thrust consistently.  Probably more like 1 N.
+c.event_prm = {sampleDepths,sampleDepthTol,sampleDepthRateTol,sampleTime,sampleTimeLockout,@bgcFeedbackPIV,Kp,Kv,Ki,ztmax,Zmax,Zballast,Zww,Zdead};
 prm.components = bgcAddComponent(c,prm.components);
+
+dump
 

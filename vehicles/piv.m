@@ -172,8 +172,9 @@ Kp = 0.01; Kv = 700; Ki = 100;  % very good, based on design criteria.
 ztmax = 0.75; % [m/s]
 Zww = -0.5*1000*(prm.CDf*prm.As + prm.CDu*prm.Af); % @@@ ZEROED OUT TO WORK ON DYNAMICS, but this is needed if
                                                      % Zballast is 0, at least for sim.
+Zdead = 0; 
 %c.event_prm = {sampleDepths,sampleDepthTol,sampleTime+50,sampleTimeLockout,@bgcFeedbackPID,Kp,Kd,Ki,Zff,Zmax};
-c.event_prm = {sampleDepths,sampleDepthTol,sampleTime,sampleTimeLockout,@bgcFeedbackPIV,Kp,Kv,Ki,ztmax,Zmax,Zballast,Zww};
+c.event_prm = {sampleDepths,sampleDepthTol,sampleTime,sampleTimeLockout,@bgcFeedbackPIV,Kp,Kv,Ki,ztmax,Zmax,Zballast,Zww,Zdead};
 prm.components = bgcAddComponent(c,prm.components);
 
 
