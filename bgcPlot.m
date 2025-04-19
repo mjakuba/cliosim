@@ -5,6 +5,7 @@
 % 2013-02-05    mvj    Created.
 
 dout = t2d(tout);
+bgcConversions;
 
 figure(1); clf reset;
 subplot(211)
@@ -20,13 +21,25 @@ ylabel('Depth Rate (m/s)');
 grid on;
 
 figure(2); clf reset;
-subplot(211)
+subplot(411)
+plot(dout,yout(:,2));
+set(gca,'ydir','reverse');
+ylabel('Depth (m)');
+grid on;
+
+subplot(412)
 plot(dout,[Zbuoyancy,Zdrag,Zthrust]);
 legend('Zbuoyancy','Zdrag','Zthrust');
 ylabel('Z Force (N)');
 grid on;
 
-subplot(212)
+subplot(413)
+plot(dout,[Vf/CC2M3]);
+legend('Float Volume');
+ylabel('Volume (cc)');
+grid on;
+
+subplot(414)
 plot(dout,[rho,mf./Vf,mf]);
 legend('Ambient Density','Profiler Density','Profiler Mass');
 ylabel('Density (kg/m^3); Mass (kg)');

@@ -83,15 +83,13 @@ for c = 1:length(prm.components)
     fVolume = cc.eos;
 
     Vf = Vf + fVolume(cc.V,cc.alpha,cc.chi,(thetaf-prm.theta),(p-prm.const.atm),...
-                      prm.theta,prm.const.atm,cc.event_prm(:));
-
+                      prm.theta,prm.const.atm,izg,cc.event_prm(:));    
     m = m + cc.m;
 end
 
 % 2025-03-31 bulk parameters for linear equation of state no long supported because
 %            incompatible with ideal gas EoS.
 [alpha,chi,cp] = deal(NaN);
-
 
 % Buoyancy force.
 Zbuoyancy = m*prm.const.g - Vf*rho*prm.const.g;
@@ -115,6 +113,9 @@ end
 
 % Control.
 % @@@ reference to specific components is really ugly.  Consider redoing components struct
+bounds = prm.components(end-1);
+assert(strcmp('bounds',bounds.name), ...
+   'Bounds event does not appear as 2nd from last component in components list!');
 descentCntrl = prm.components(end-3);
 assert(strcmp('descentController',descentCntrl.name), ...
    'Descent controller does not appear as 3rd from last component in components list!');
@@ -160,12 +161,17 @@ elseif cntrl.active
   %if abs(z-zg) > zTol
   %  bgcIntegrator(t,0,[],[]); % reset integrator.  This is critical.  Unclear if better than integral windup.
   %end
-  
 
+  if zg < 0 % interpret this as indicating closed loop ascent to surface.
+    if bounds.active % @@@ does not differentiate between bottom and surface.
+      izg = izg + 1;  % no guarantee this will be called only once.
+      fprintf(1,'Arrived at surface.  Incrementing goal.\n');
+    end
+  end
+      
   if isnan(zg)
       Zthrust = -Zmax;  % hard-coded ascent.
   else
-
 
       % bgcEventFilter starts and stops sampling when bounds on z, zt are met and z is close enough to
       % an element of zFilter.  It has no way of keeping track of which sample depth should be active
@@ -202,7 +208,7 @@ else
   zg = NaN; % no goal depth if there is no controller running.
 end
 
-% Compute acceleration.
+% Compute acceleration.  Zbouyancy is based on the profile and may include a free surface.
 ztt = 1/(prm.h + m)*(Zbuoyancy + Zdrag + Zthrust);
 
 % Create output vector including integral error terms.  

@@ -16,7 +16,12 @@ P = dP + Po;
 V = theta./P .* Vo.*Po./thetao;
 
 % Optionally handle a lockout volume.
-if nargin > 7
+if nargin > 8
+    izg = varargin{1};
+    VLockouts = varargin{2}{2};
+    izg = min(izg,length(VLockouts));  % hack
+    V = max(VLockouts(izg),V);
+elseif nargin > 7
     VLockout = varargin{1}{2};
     V = max(VLockout,V);
 end

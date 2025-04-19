@@ -92,9 +92,13 @@ while tout(end) < tend && ~stop
       prm.components(c).m = prm.components(c).rho*prm.components(c).V;
     end
     
-    % End simulation upon impacting seafloor or reaching surface.
+    % Optionally end simulation upon impacting seafloor or reaching surface.
     if strcmp(prm.components(c).name,'bounds')
-      stop = true;
+        if ye(iie,2) > prm.components(c).event_prm{2} && prm.components(c).event_prm{4} == true  % grounding
+          stop = true;
+        elseif ye(iie,2) < prm.components(c).event_prm{1} && prm.components(c).event_prm{3} == true  % breach
+          stop = true;
+        end
     end
     
     % Toggle components that triggered event.
