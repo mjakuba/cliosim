@@ -3,44 +3,47 @@
 %
 % Revision History
 % 2013-02-05    mvj    Created.
+% 2025-05-07    mvj    modify to use log file variables.  (tout -> t, etc.)
 
-dout = t2d(tout);
+
+
+d = t2d(t);
 bgcConversions;
 
 figure(1); clf reset;
 subplot(211)
-plot(dout,yout(:,2));
+plot(d,z);
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
 grid on;
 
 subplot(212)
-plot(dout,yout(:,1));
+plot(d,zt);
 set(gca,'ydir','reverse');
 ylabel('Depth Rate (m/s)');
 grid on;
 
 figure(2); clf reset;
 subplot(411)
-plot(dout,yout(:,2));
+plot(d,z);
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
 grid on;
 
 subplot(412)
-plot(dout,[Zbuoyancy,Zdrag,Zthrust]);
+plot(d,[Zbuoyancy,Zdrag,Zthrust]);
 legend('Zbuoyancy','Zdrag','Zthrust');
 ylabel('Z Force (N)');
 grid on;
 
 subplot(413)
-plot(dout,[Vf/CC2M3]);
+plot(d,[Vf/CC2M3]);
 legend('Float Volume');
 ylabel('Volume (cc)');
 grid on;
 
 subplot(414)
-plot(dout,[rho,mf./Vf,mf]);
+plot(d,[rho,mf./Vf,mf]);
 legend('Ambient Density','Profiler Density','Profiler Mass');
 ylabel('Density (kg/m^3); Mass (kg)');
 grid on;
@@ -61,24 +64,24 @@ end
 
 figure(3); clf reset;
 subplot(411)
-plot(dout,yout(:,2));
+plot(d,z);
 set(gca,'ydir','reverse');
 ylabel('Depth (m)');
 grid on;
 
 subplot(412)
-plot(dout,Zthrust);
+plot(d,Zthrust);
 ylabel('Thruster Thrust (N)');
 grid on;
 
 subplot(413)
-plot(dout,pwr);
+plot(d,pwr);
 ylabel('Thruster Power (W)');
 grid on;
 
 subplot(414)
 J2KWH = 1/1000/3600;
-plot(dout,[NaN; J2KWH*cumsum(pwr(2:end).*diff(tout))]);
+plot(d,[NaN; J2KWH*cumsum(pwr(2:end).*diff(t))]);
 ylabel('Thruster Energy (kWh)');
 grid on;
 

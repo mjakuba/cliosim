@@ -49,7 +49,7 @@ prm.solver.tend = 3300; % s  Stop sim before final ascent or it slows way down.
 BALLAST_DEPTH = 500; % I think this should be deeper than any target depth?  Yes, this will be the completely compressed depth.
 NEUTRAL_DEPTH = 50;
 CUTOFF_DEPTH = 5; % [m] initial descent to below unstable near-surface neutral depth
-sampleDepths = [400 -10 250 -10]; % [m]  0s make this run very slow.  unclear why, maybe in bgcEventFilter?
+sampleDepths = [400 -10 300 -10 200 -10 100 -10]; % [m]  0s make this run very slow.  unclear why, maybe in bgcEventFilter?
 sampleDepthTol = 0.1; % +/- [m] Sample timer starts once within this band.
 sampleDepthRateTol = 0.1; % +/- [m/s] and depth rate below this figure.  If too small, replay won't catch this.
 sampleTime = 1000; %7200; % [s] time to remain at sample depth.
@@ -125,7 +125,7 @@ Vc = bgcVolumeLinear(prmc.V,prmc.alpha,prmc.chi,(T_K-prm.theta),(P_Pa-prm.const.
 Vg = bgcVolumeIdealGas(COMPRESSEE_VOLUME,NaN,NaN,(T_K-prm.theta),(P_Pa-prm.const.atm),prm.theta,prm.const.atm); % Volume of the compressee at neutral depth.
 Zc = prm.const.g*prmc.m - (Vc+Vg)*dens_kgpm3*prm.const.g; % (N) buoyancy (<0 indicates system is positive, >0 float is negative).
 assert(Zc < 0,sprintf('Vehicle is negative at %.1f m (%.3f N).  This would require external volume and violate design assumptions.  Abort.',BALLAST_DEPTH,Zc));
-fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at %.1f m\n',-Zc/prm.const.g,BALLAST_DEPTH);
+fprintf(1,'Vehicle is positive.  Approx. %.1f kg margin ballast yields neutral at %.1f m\n',-Zc/prm.const.g,NEUTRAL_DEPTH);
 f = bgcInitComponent('Internal ballast');
 f.rho = inf;
 f.alpha = 0;  % inside housing
